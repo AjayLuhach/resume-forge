@@ -63,7 +63,7 @@ function prepareTemplateData(aiResponse) {
  * @param {object} aiResponse - Response from AI service
  * @returns {Promise<string>} Path to generated DOCX file
  */
-export async function generateDocx(aiResponse) {
+export async function generateDocx(aiResponse, outputPaths) {
   console.log('📄 Generating tailored DOCX...');
 
   try {
@@ -85,11 +85,11 @@ export async function generateDocx(aiResponse) {
     });
 
     // Write to file
-    fs.writeFileSync(config.paths.outputDocx, buffer);
+    fs.writeFileSync(outputPaths.docx, buffer);
 
-    console.log(`✅ DOCX saved: ${config.paths.outputDocx}`);
+    console.log(`✅ DOCX saved: ${outputPaths.docx}`);
 
-    return config.paths.outputDocx;
+    return outputPaths.docx;
   } catch (error) {
     if (error.properties && error.properties.errors) {
       const templateErrors = error.properties.errors

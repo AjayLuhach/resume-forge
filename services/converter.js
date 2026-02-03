@@ -28,7 +28,7 @@ export function checkLibreOffice() {
  * @param {string} docxPath - Path to input DOCX file
  * @returns {Promise<string>} Path to generated PDF file
  */
-export async function convertToPdf(docxPath) {
+export async function convertToPdf(docxPath, targetPdfPath) {
   console.log('🔄 Converting DOCX to PDF using LibreOffice...');
 
   if (!fs.existsSync(docxPath)) {
@@ -64,16 +64,13 @@ export async function convertToPdf(docxPath) {
     const generatedPdf = path.join(outputDir, `${docxBasename}.pdf`);
 
     // Rename to our target filename if different
-    if (generatedPdf !== config.paths.outputPdf) {
-      if (fs.existsSync(config.paths.outputPdf)) {
-        fs.unlinkSync(config.paths.outputPdf);
-      }
-      fs.renameSync(generatedPdf, config.paths.outputPdf);
+    if (generatedPdf !== targetPdfPath) {
+      fs.renameSync(generatedPdf, targetPdfPath);
     }
 
-    console.log(`✅ PDF saved: ${config.paths.outputPdf}`);
+    console.log(`✅ PDF saved: ${targetPdfPath}`);
 
-    return config.paths.outputPdf;
+    return targetPdfPath;
   } catch (error) {
     throw new Error(`PDF conversion failed: ${error.message}`);
   }

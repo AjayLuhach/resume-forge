@@ -134,14 +134,18 @@ async function main() {
     // Preview
     displaySummary(aiResponse);
 
+    // Get output paths (incremented filename)
+    const outputPaths = config.paths.getOutputPaths();
+    console.log(`📁 Output directory: ${config.paths.outputDir}`);
+
     // Generate DOCX
-    const docxPath = await generateDocx(aiResponse);
+    const docxPath = await generateDocx(aiResponse, outputPaths);
 
     // Convert to PDF if LibreOffice available
     let outputPath = docxPath;
 
     if (hasLibreOffice) {
-      outputPath = await convertToPdf(docxPath);
+      outputPath = await convertToPdf(docxPath, outputPaths.pdf);
       cleanupDocx(docxPath);
     } else {
       console.log('📄 LibreOffice not found - keeping DOCX output');

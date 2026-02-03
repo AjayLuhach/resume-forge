@@ -31,7 +31,17 @@ function buildPrompt(jobDescription, resumeData) {
     ...resumeData.skills.other,
   ];
 
+  // Current date for accurate experience calculation
+  const currentDate = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
   return `You are an ATS (Applicant Tracking System) optimization expert. Your goal is to maximize keyword match score.
+
+## IMPORTANT - CURRENT DATE: ${currentDate}
+Use this date to accurately calculate years of experience from the candidate's start date.
 
 ## RULES:
 
