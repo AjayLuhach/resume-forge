@@ -9,7 +9,7 @@
  * Placeholders:
  * - {{SUMMARY}} - Professional summary (tailored)
  * - {{SKILLS}} - Technical skills (tailored)
- * - {{B1}}-{{B6}} - Experience bullet points (tailored)
+ * - {{B1}}-{{B5}} - Experience bullet points (tailored)
  *
  * Static content (not changed by AI):
  * - Personal info, education, projects remain fixed
@@ -238,7 +238,6 @@ async function generateTemplate() {
           createBullet('{{B3}}'),
           createBullet('{{B4}}'),
           createBullet('{{B5}}'),
-          createBullet('{{B6}}'),
 
           // Previous Experience - Internshala (static)
           ...createExperienceHeader(

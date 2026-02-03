@@ -1,6 +1,6 @@
 /**
  * AI Service - Gemini API for resume tailoring
- * Optimized prompt to prevent hallucination and ensure ATS compliance
+ * Optimized for maximum ATS score
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -21,10 +21,9 @@ function initializeClient() {
 }
 
 /**
- * Build optimized prompt - prevents hallucination, enforces constraints
+ * Build optimized prompt for maximum ATS match
  */
 function buildPrompt(jobDescription, resumeData) {
-  // Flatten skills for easy reference
   const allSkills = [
     ...resumeData.skills.frontend,
     ...resumeData.skills.backend,
@@ -32,22 +31,28 @@ function buildPrompt(jobDescription, resumeData) {
     ...resumeData.skills.other,
   ];
 
-  return `You are an ATS resume optimizer. Tailor resume content for maximum job match.
+  return `You are an ATS (Applicant Tracking System) optimization expert. Your goal is to maximize keyword match score.
 
 ## RULES:
 
-### ALLOWED (DO THIS):
-- Rewrite and enhance achievements creatively based on existing experience
-- Combine multiple experiences into stronger bullet points
-- Rephrase to match job description keywords
-- Reasonably extrapolate from existing work (e.g., "built APIs" can become "designed RESTful APIs")
-- Adjust metrics within reasonable range based on context
+### ALLOWED:
+- Rewrite and enhance achievements based on existing experience
+- Combine experiences into stronger bullet points
+- Match JD keywords exactly as written
+- ADD SIMILAR/ADJACENT SKILLS for ATS even if basic exposure:
+  - If knows MySQL → can add PostgreSQL, SQL databases
+  - If knows MongoDB → can add NoSQL databases
+  - If knows Express → can add Fastify (similar Node frameworks)
+  - If knows REST APIs → can add API rate limiting, request validation, throttling
+  - If knows Node.js backend → can add event-driven architecture, background jobs
+  - If knows JWT → can add OAuth, authentication flows
+  - If built microservices or modular code → can add microservices architecture
+- Include infrastructure keywords naturally in bullets
 
-### NOT ALLOWED (NEVER DO THIS):
-- Add technologies candidate doesn't have (no Kubernetes if not in skills)
-- Claim experience with tools not listed (no CUDA, no ML if not mentioned)
-- Invent completely new achievements unrelated to their work
-- Add skills outside their tech stack
+### NOT ALLOWED:
+- Add completely unrelated technologies (no ML/AI, no Kubernetes if never used)
+- Claim senior-level expertise in tools only used at basic level
+- Invent achievements with no basis in experience
 
 ## JOB DESCRIPTION:
 ${jobDescription}
@@ -59,33 +64,56 @@ Role: ${resumeData.experience[0].title}
 Company: ${resumeData.experience[0].company}
 Duration: ${resumeData.experience[0].duration}
 
-SKILLS (only use these technologies):
+CORE SKILLS (definitely has):
 ${allSkills.join(', ')}
 
-EXPERIENCE (enhance and rewrite these):
+EXPERIENCE (enhance these, add ATS keywords):
 ${resumeData.experience[0].bullets.map((b, i) => `${i + 1}. ${b}`).join('\n')}
 
-PROJECTS (reference these):
+PROJECTS:
 ${resumeData.projects.map(p => `- ${p.name}: ${p.technologies.join(', ')}`).join('\n')}
 
-## OUTPUT FORMAT:
+## OUTPUT REQUIREMENTS:
 
-### SUMMARY (200-280 chars)
-Format: "[Years] experience as [Role] specializing in [2-3 techs from JD]. [Achievement]. [Value]."
+### SUMMARY (250-350 chars)
+- Include years of experience + role
+- Pack in 4-5 key technologies from JD
+- One achievement with metric
+- Make it keyword-dense for ATS
 
-### BULLETS (exactly 6, each 80-150 chars)
-Format: "[Action verb] [task] using [tech from JD] [result with metric]"
-Good verbs: Built, Developed, Optimized, Implemented, Integrated, Designed, Architected, Scaled
+### BULLETS (exactly 5, each 120-180 chars)
+- Longer, more detailed bullets
+- MUST include ATS keywords from JD naturally
+- Include infrastructure terms: rate limiting, caching, queues, validation
+- Mention specific technologies by name
+- Include metrics where possible
+- Format: "[Verb] [detailed task with tech keywords] [result/metric]"
 
-### SKILLS (8-10, comma-separated)
-Prioritize: Skills that appear in BOTH job description AND candidate skills
-Use exact JD terminology (e.g., if JD says "Node.js", use "Node.js" not "NodeJS")
+### SKILLS (10-12, comma-separated)
+- First: Exact matches from JD that candidate has
+- Then: Adjacent/similar skills for ATS boost
+- Include both: "PostgreSQL" AND "MySQL" if candidate knows SQL
+- Include: Redis, OAuth, JWT if any auth/caching experience
+- Use exact JD terminology
 
-## JSON OUTPUT (no markdown, no explanation):
+## IMPORTANT FOR ATS:
+- Mirror EXACT keywords from job description
+- If JD says "Node.js" use "Node.js" not "NodeJS"
+- If JD mentions "API rate limiting" include that exact phrase
+- If JD mentions "background jobs" or "queues" include those terms
+- Add security terms if JD mentions them: request validation, authentication
+
+## JSON OUTPUT (no markdown):
 {
-  "summary": "200-280 chars",
-  "bullets": ["80-150 chars each", "...", "...", "...", "...", "..."],
-  "skills": "Skill1, Skill2, Skill3, Skill4, Skill5, Skill6, Skill7, Skill8"
+  "summary": "250-350 chars, keyword-dense",
+  "bullets": [
+    "120-180 chars with ATS keywords",
+    "120-180 chars with ATS keywords",
+    "120-180 chars with ATS keywords",
+    "120-180 chars with ATS keywords",
+    "120-180 chars with ATS keywords"
+  ],
+  "skills": "Skill1, Skill2, Skill3, Skill4, Skill5, Skill6, Skill7, Skill8, Skill9, Skill10"
 }`;
 }
 
@@ -120,6 +148,7 @@ function parseResponse(response) {
     parsed.bullets.forEach((b, i) => {
       console.log(`   Bullet ${i + 1}: ${b.length} chars`);
     });
+    console.log(`   Skills: ${parsed.skills.split(',').length} items`);
 
     return parsed;
   } catch (error) {

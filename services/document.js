@@ -41,9 +41,9 @@ function loadTemplate(templatePath) {
 function prepareTemplateData(aiResponse) {
   const { summary, bullets, skills } = aiResponse;
 
-  // Ensure we have 6 bullets (pad with empty strings if needed)
+  // Support 5 or 6 bullets
   const paddedBullets = [...bullets];
-  while (paddedBullets.length < 6) {
+  while (paddedBullets.length < 5) {
     paddedBullets.push('');
   }
 
@@ -55,7 +55,6 @@ function prepareTemplateData(aiResponse) {
     B3: paddedBullets[2] || '',
     B4: paddedBullets[3] || '',
     B5: paddedBullets[4] || '',
-    B6: paddedBullets[5] || '',
   };
 }
 
