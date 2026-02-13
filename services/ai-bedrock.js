@@ -22,6 +22,7 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import { logApiCall, displayCostSummary } from "./cost-logger.js";
 import { scoreResume } from "./ats-scorer.js";
+import { logContactDetails } from "./contact-logger.js";
 import config from "../config.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -103,9 +104,10 @@ CANDIDATE INFO:
 - Full resume provided in JSON format (skills, experience, projects with core technologies used)
 
 KEYWORD ANALYSIS RULES (CRITICAL):
-- 🔍 ALWAYS check the full resume JSON (skills arrays + project coreTech) FIRST before categorizing
-- exact = candidate DEFINITELY has this (in skills OR used in actual projects - match flexibly: "React.js" = "React")
+- 🔍 ALWAYS check the full resume JSON (skills arrays + projects(personal and under experience ones)) FIRST before categorizing
+- exact = candidate DEFINITELY has this (in skills OR used in actual projects - match flexibly for same skills : "React.js" = "React") but not java = javascript etc 
 - claim = ONLY naming variations OR direct sub-concepts (e.g., has "Next.js" → claim "SSR")
+- we have notClaim element in our json of core skills that should never be claimed
 - no = different tech in same category (MongoDB ≠ Cassandra, WebSockets ≠ Kafka, Express.js ≠ Sequelize)
 - CRITICAL: Different databases, ORMs, message queues, frameworks = CANNOT claim (e.g., MongoDB ≠ Cassandra) 
 
@@ -124,12 +126,70 @@ OUTPUT: Always respond with ONLY valid JSON, no markdown, no explanation.`;
 }
 
 /**
- * Build full resume context from resumeData.json
- * Pass the complete structured resume to AI for better context
+ * Build full resume context from resumeData.json (for Step 1 - Analysis)
+ * Pass the complete structured resume to AI for keyword matching
  */
 function buildResumeContext(resumeData) {
   return `CANDIDATE'S FULL RESUME (JSON format):
 ${JSON.stringify(resumeData, null, 2)}`;
+}
+
+/**
+ * Build focused resume context for Step 2 - Rewrite
+ * Only pass original descriptions (not skills/meta) to maintain authenticity
+ * Only include the 2-3 most relevant work projects identified by Step 1
+ */
+function buildResumeContextForRewrite(resumeData, analysis) {
+  // Get all work projects
+  const allWorkProjects = (resumeData.experience || []).flatMap((exp) =>
+    (exp.projects || []).map((proj) => ({
+      name: proj.name,
+      description: proj.description,
+      coreTech: proj.coreTech || [],
+    })),
+  );
+
+  // Filter to only include relevant projects identified by Step 1
+  const relevantProjectNames = (analysis.relevantProjects || []).map(
+    (p) => p.name,
+  );
+  let selectedWorkProjects = allWorkProjects.filter((proj) =>
+    relevantProjectNames.includes(proj.name),
+  );
+
+  // Fallback: If no relevant projects identified, use first 2 projects
+  if (selectedWorkProjects.length === 0 && allWorkProjects.length > 0) {
+    selectedWorkProjects = allWorkProjects.slice(0, 2);
+  }
+
+  // Get all personal projects (only 3, so include all - with full objects)
+  const personalProjects = resumeData.projects || [];
+
+  return `ORIGINAL RESUME CONTENT (Use as base for rewriting):
+
+ORIGINAL PROFESSIONAL SUMMARY:
+${resumeData.professionalSummary?.default || ""}
+
+WORK PROJECTS - RELEVANT TO THIS JD (${selectedWorkProjects.length} projects selected by Step 1):
+${selectedWorkProjects
+  .map(
+    (proj, idx) => `
+${idx + 1}. ${proj.name}
+   Original Description: ${proj.description}
+   Core Tech: ${proj.coreTech.join(", ")}
+`,
+  )
+  .join("\n")}
+
+PERSONAL PROJECTS (all ${personalProjects.length} projects - full details):
+${JSON.stringify(personalProjects, null, 2)}
+
+INSTRUCTIONS FOR REWRITING:
+- REWRITE the original descriptions above, don't generate from scratch
+- Use the projects descriptions and other info provided for rewriting context
+- INJECT JD keywords naturally into existing content and can create new lines to make ATS friendly and phrase usage naturally
+- DON'T lose important project details related to tech stack, but can drop verbose details not needed for ATS
+- The goal is ATS optimization, not using whole project details and neither replacing them with something totally different`;
 }
 
 // ============================================================
@@ -199,12 +259,12 @@ EXTRACTION RULES:
    - requiredSkills: Top 7-10 must-have skills (technical + soft skills + methodologies)
    - niceToHave: Optional skills
    - phrases: 3-5 SHORT action phrases
-   - contact: Recruiter/hiring manager details if present
+   - contact: Extract ALL contact info + application instructions (email, phone, any relevant link (LinkedIn/Twitter/portfolio/website), recruiter name, subject line requirements, any special instructions)
 
 4. RESUME CONTEXT (for Step 2 rewrite - extract from candidate's full resume JSON):
    - candidateTech: Candidate's primary tech stack (e.g., "Node.js/React.js/MongoDB")
-   - relevantProjects: List of 2-3 most relevant work project names + core technologies from resumeData.experience[].projects[]
-   - personalProjects: List of personal project names from resumeData.projects[]
+   - relevantProjects: List of 2 most relevant work project names + core technologies from resumeData.experience[].projects[] only ,not from  resumeData.projects[]
+   - personalProjects: List of personal project names only from resumeData.projects[]
 
 Return ONLY valid JSON:
 {
@@ -223,14 +283,21 @@ Return ONLY valid JSON:
   "relevantProjects": [{"name": "project name", "tech": ["tech1", "tech2"]}],
   "personalProjects": ["project1", "project2"],
   "contact": {
-    "name": "name or null",
+    "name": "recruiter/contact name or null",
     "email": "email or null",
-    "phone": "phone or null"
+    "phone": "phone or null",
+    "link": "any relevant link (LinkedIn/Twitter/portfolio/website) or null",
+    "instructions": "subject line requirements, portfolio requirements, or any other application instructions (short text) or null"
   }
 }`;
 }
 
-function buildRewritePrompt(jobDescription, analysis, resumeData) {
+function buildRewritePrompt(
+  jobDescription,
+  analysis,
+  resumeData,
+  resumeContextForRewrite,
+) {
   const keywords = [...(analysis.exact || []), ...(analysis.claim || [])];
   const expStart = resumeData.meta?.experienceStart || "Unknown";
   const yearsExp = expStart !== "Unknown" ? calculateExperience(expStart) : 0;
@@ -242,21 +309,12 @@ function buildRewritePrompt(jobDescription, analysis, resumeData) {
   // Use candidate tech from analysis output (Step 1 already extracted this)
   const primaryTech = analysis.candidateTech || "Full Stack";
 
-  // Use relevant projects from analysis output (Step 1 already selected these)
-  const relevantProjects = analysis.relevantProjects || [];
-
   // Use personal projects directly from resumeData (more reliable than analysis output)
   const personalProjects = (resumeData.projects || []).map((p) => p.name);
 
-  // Build project lists from analysis output
-  const projectsList = relevantProjects
-    .map((proj, idx) => {
-      const techSample = proj.tech.slice(0, 6).join(", ");
-      return `  ${idx + 1}. ${proj.name}: ${techSample}`;
-    })
-    .join("\n");
+  return `${resumeContextForRewrite}
 
-  return `CURRENT DATE: ${getCurrentDate()}
+CURRENT DATE: ${getCurrentDate()}
 CANDIDATE EXPERIENCE: ${yearsExp} years
 CANDIDATE PRIMARY TECH: ${primaryTech}
 
@@ -268,40 +326,36 @@ KEYWORDS TO USE (from Step 1 analysis - use EXACT formatting):
 
 CRITICAL: Use keywords EXACTLY as listed above (preserve "Next.js" not "NextJS", "Node.js" not "nodejs", etc.)
 
-Rewrite resume content to match this job description while staying truthful to candidate's skills.
-
 JOB TITLE: ${jdTitle}
 
 TITLE GENERATION (CRITICAL FOR ATS RANKING):
 - Use EXACTLY this title: "${jdTitle}"
-- DO NOT add parentheses, tech stack, or any modifications
-- DO NOT change any words or add descriptors
 - The title MUST be identical to the JD title for ATS matching
 
-Examples:
-  * JD: "Frontend Developer" → Title: "Frontend Developer" (NOT "Frontend Developer (React)")
+REWRITING APPROACH (CRITICAL):
+1. Professional Summary:
+   - Use the original summary provided above for some context
+   - INJECT JD keywords naturally and extend or contract summary based on need 
+   - Length: 250-350 chars
 
-WORK PROJECTS (from analysis - already selected by Step 1):
-${projectsList}
+2. Experience Bullets:
+   - Write 5 experience bullets (120-180 chars each)
+   - AT LEAST 2 bullets at different places MUST reference specific WORK PROJECTS BY NAME, do not included anything about personal projects in bullets here  
+   - Use  accomplishments and impact from original project descriptions or create simples ones related to them that are naturally done by devs but not written to keep the descriptions short
+   - INJECT JD keywords naturally while maintaining technical depth
+   - Example: "Built GetStatus platform using React, Node.js, MongoDB with real-time WebSocket features and CloudWatch monitoring"
 
-EXPERIENCE BULLETS STRUCTURE (CRITICAL):
-- Write 5 experience bullets (120-180 chars each)
-- AT LEAST 2 bullets MUST explicitly mention work projects from the list above BY NAME
-- Example: "Built GetStatus platform using React, Node.js, MongoDB with real-time WebSocket features and CloudWatch monitoring"
-- Remaining bullets can be general achievements or mention other work
-
-PERSONAL PROJECTS SECTION (CRITICAL - from analysis output):
-You MUST rewrite ${personalProjects.length} personal project descriptions to maximize ATS keyword coverage:
-- Personal projects: ${personalProjects.join(", ")}
-- Each description should be 130-250 chars
-- INJECT JD keywords into these descriptions wherever truthful
-- These are SEPARATE from work experience - they go in "Projects" section
+3. Personal Projects:
+   - REWRITE ${personalProjects.length} personal project descriptions
+   - USE the original descriptions as context - don't generate from scratch to loose relatibility
+   - INJECT JD keywords naturally into rewritten description 
+   - KEEP core project functionality and technical details
+   - Length: 130-250 chars per project
 
 CONTENT RULES:
-- Use keywords from "EXACT MATCH" list above (already extracted by Step 1)
+- Use keywords from "EXACT MATCH" list (already extracted by Step 1)
+- We have very long descriptions of projects and experience for context to mold, shorten and use them for better rewriting 
 - Weave in these JD phrases naturally: ${phrases.join("; ")}
-- Only mention core technologies the candidate actually knows
-- Be honest about experience level and capabilities
 
 Return ONLY valid JSON (no markdown):
 {
@@ -452,7 +506,13 @@ function expandAnalysisResponse(abbreviated) {
     jdCompany: abbreviated.jdCompany || null,
     requiredSkills: abbreviated.requiredSkills || [],
     niceToHave: abbreviated.niceToHave || [],
-    contact: abbreviated.contact || { name: null, email: null, phone: null },
+    contact: abbreviated.contact || {
+      name: null,
+      email: null,
+      phone: null,
+      link: null,
+      instructions: null,
+    },
     // Resume context for Step 2 (extracted from full resume)
     candidateTech: abbreviated.candidateTech || "Full Stack",
     relevantProjects: abbreviated.relevantProjects || [],
@@ -563,11 +623,13 @@ function displayAnalysis(analysis) {
   }
 
   const c = analysis.contact || {};
-  if (c.name || c.email || c.phone) {
+  if (c.name || c.email || c.phone || c.link || c.instructions) {
     console.log("\n📬 SEND RESUME TO:");
     if (c.name) console.log(`   Name:  ${c.name}`);
     if (c.email) console.log(`   Email: ${c.email}`);
     if (c.phone) console.log(`   Phone: ${c.phone}`);
+    if (c.link) console.log(`   Link:  ${c.link}`);
+    if (c.instructions) console.log(`   📝 ${c.instructions}`);
   }
 
   console.log("\n✅ EXACT MATCH (candidate has):");
@@ -655,12 +717,13 @@ export async function tailorResume(jobDescription, resumeData) {
   const resumeContext = buildResumeContext(resumeData);
 
   // ========== STEP 1: Analysis (Claude Haiku 4.5) ==========
-  console.log("\nSTEP 1: Analyzing JD keywords (Claude Haiku 4.5)...");
+  console.log("\n🔍 STEP 1: Analyzing JD keywords...");
 
+  const analysisUserPrompt = `${resumeContext}\n\n${buildAnalysisPrompt(jobDescription, resumeData)}`;
   const analysisMessages = [
     {
       role: "user",
-      content: `${resumeContext}\n\n${buildAnalysisPrompt(jobDescription, resumeData)}`,
+      content: analysisUserPrompt,
     },
   ];
 
@@ -672,13 +735,30 @@ export async function tailorResume(jobDescription, resumeData) {
   const jobTitle = jobDescription.split("\n")[0];
   logKeywordGaps(jobTitle, analysis);
 
-  // ========== STEP 2: Rewrite (Claude Haiku 4.5) ==========
-  console.log("\nSTEP 2: Rewriting resume (Claude Haiku 4.5)...");
+  // Save contact details if present
+  logContactDetails(analysis.contact, {
+    title: analysis.jdTitle,
+    company: analysis.jdCompany,
+  });
 
+  // ========== STEP 2: Rewrite (Claude Haiku 4.5) ==========
+  console.log("\n✍️  STEP 2: Rewriting resume...");
+
+  // Only pass relevant projects identified by Step 1 (saves tokens)
+  const resumeContextForRewrite = buildResumeContextForRewrite(
+    resumeData,
+    analysis,
+  );
+  const rewriteUserPrompt = buildRewritePrompt(
+    jobDescription,
+    analysisRaw,
+    resumeData,
+    resumeContextForRewrite,
+  );
   const rewriteMessages = [
     {
       role: "user",
-      content: buildRewritePrompt(jobDescription, analysisRaw, resumeData),
+      content: rewriteUserPrompt,
     },
   ];
 
@@ -686,23 +766,8 @@ export async function tailorResume(jobDescription, resumeData) {
   const rewriteRaw = parseJSON(rewriteText, "Step 2 - Rewrite");
   const rewritten = expandRewriteResponse(rewriteRaw, resumeData);
 
-  // Dynamically show selected work projects (referenced in experience bullets)
-  console.log(`   Resume rewritten with extracted keywords`);
-  const projectsUsed = rewritten.projectsUsed || [];
-  console.log(
-    `   📂 Work projects referenced in bullets: ${projectsUsed.join(", ")}`,
-  );
-  const personalProjectNames = (resumeData.projects || [])
-    .map((p) => p.name)
-    .join(", ");
-  console.log(`   📝 Personal projects rewritten: ${personalProjectNames}`);
-
   // ========== STEP 3: Score (Deterministic - No AI) ==========
-  console.log("\nSTEP 3: Scoring ATS match (deterministic - no AI)...");
-
-  // Use deterministic ATS scorer (no AI call)
   const score = scoreResume(analysis, rewritten, resumeData);
-  displayScore(score);
 
   if (
     !rewritten.summary ||
@@ -714,6 +779,10 @@ export async function tailorResume(jobDescription, resumeData) {
 
   logResumeHistory(analysis, rewritten, score);
   displayCostSummary();
+
+  // Display score at the very end for easy viewing
+  displayScore(score);
+
   return {
     ...rewritten,
     jdTitle: analysis.jdTitle || null,
