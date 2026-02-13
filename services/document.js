@@ -36,10 +36,11 @@ function loadTemplate(templatePath) {
 /**
  * Prepare template data from AI response
  * @param {object} aiResponse - Response from AI service
+ * @param {object} resumeData - Resume data from JSON
  * @returns {object} Template data object
  */
-function prepareTemplateData(aiResponse) {
-  const { summary, bullets, skills } = aiResponse;
+function prepareTemplateData(aiResponse, resumeData) {
+  const { title, summary, bullets, skills } = aiResponse;
 
   // Support 5 or 6 bullets
   const paddedBullets = [...bullets];
@@ -47,7 +48,8 @@ function prepareTemplateData(aiResponse) {
     paddedBullets.push('');
   }
 
-  return {
+  const templateData = {
+    TITLE: title || 'Full Stack Developer (MERN)',
     SUMMARY: summary,
     SKILLS: skills,
     B1: paddedBullets[0] || '',
@@ -56,24 +58,43 @@ function prepareTemplateData(aiResponse) {
     B4: paddedBullets[3] || '',
     B5: paddedBullets[4] || '',
   };
+
+  // Build personal project mappings dynamically from resumeData.json
+  (resumeData.projects || []).forEach(project => {
+    const key = project.name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    const placeholderKey = `P_${project.name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()}`;
+    templateData[placeholderKey] = aiResponse[key] || '';
+  });
+
+  return templateData;
 }
 
 /**
  * Generate tailored resume DOCX from template
  * @param {object} aiResponse - Response from AI service
+ * @param {object} outputPaths - Output paths for DOCX/PDF
+ * @param {object} resumeData - Resume data from JSON
  * @returns {Promise<string>} Path to generated DOCX file
  */
-export async function generateDocx(aiResponse, outputPaths) {
+export async function generateDocx(aiResponse, outputPaths, resumeData) {
   console.log('📄 Generating tailored DOCX...');
 
   try {
     const doc = loadTemplate(config.paths.template);
-    const templateData = prepareTemplateData(aiResponse);
+    const templateData = prepareTemplateData(aiResponse, resumeData);
 
     console.log('📝 Replacing placeholders:');
+    console.log(`   - Title: ${templateData.TITLE}`);
     console.log(`   - Summary: ${templateData.SUMMARY.substring(0, 50)}...`);
     console.log(`   - Skills: ${templateData.SKILLS.substring(0, 50)}...`);
     console.log(`   - Bullets: ${aiResponse.bullets.length} points`);
+
+    // Display personal projects dynamically
+    (resumeData.projects || []).forEach(project => {
+      const placeholderKey = `P_${project.name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()}`;
+      const value = templateData[placeholderKey] || '';
+      console.log(`   - ${project.name}: ${value.substring(0, 50)}...`);
+    });
 
     // Replace placeholders
     doc.render(templateData);

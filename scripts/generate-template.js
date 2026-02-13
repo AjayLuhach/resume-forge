@@ -33,6 +33,10 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const outputPath = join(__dirname, '..', 'template.docx');
+const resumeDataPath = join(__dirname, '..', 'resumeData.json');
+
+// Load resume data
+const resumeData = JSON.parse(fs.readFileSync(resumeDataPath, 'utf-8'));
 
 // Color scheme (ATS-friendly - minimal colors)
 const colors = {
@@ -144,6 +148,13 @@ function createExperienceHeader(title, company, duration, location) {
 async function generateTemplate() {
   console.log('📝 Generating ATS-friendly resume template...\n');
 
+  // Extract data from resumeData.json
+  const { personalInfo, contact } = resumeData;
+  const currentJob = resumeData.experience?.find(exp => exp.isCurrent) || resumeData.experience?.[0];
+  const previousJobs = resumeData.experience?.filter(exp => !exp.isCurrent) || [];
+  const education = resumeData.education || [];
+  const personalProjects = resumeData.projects || [];
+
   const doc = new Document({
     sections: [
       {
@@ -162,7 +173,7 @@ async function generateTemplate() {
           new Paragraph({
             children: [
               new TextRun({
-                text: 'Ajay Kumar',
+                text: personalInfo?.name || 'Your Name',
                 bold: true,
                 size: fontSize.name,
                 color: colors.accent,
@@ -176,7 +187,7 @@ async function generateTemplate() {
           new Paragraph({
             children: [
               new TextRun({
-                text: 'Jind, Haryana, India | ajayluhach4@gmail.com | 9996033865',
+                text: `${personalInfo?.location || ''} | ${contact?.email || ''} | ${contact?.phone || ''}`,
                 size: fontSize.small,
                 color: colors.secondary,
               }),
@@ -188,7 +199,7 @@ async function generateTemplate() {
           new Paragraph({
             children: [
               new TextRun({
-                text: 'github.com/AjayLuhach | linkedin.com/in/ajayluhach7 | ajayluhach.in',
+                text: `${contact?.github || ''} | ${contact?.linkedin || ''} | ${contact?.portfolio || ''}`,
                 size: fontSize.small,
                 color: colors.secondary,
               }),
@@ -226,12 +237,12 @@ async function generateTemplate() {
           // ============ EXPERIENCE ============
           ...createSectionHeader('Professional Experience'),
 
-          // Current Job - Repozitory (with AI-tailored bullets)
+          // Current Job (with AI-tailored bullets)
           ...createExperienceHeader(
-            'SDE (Full Stack Developer)',
-            'Repozitory Technologies Pvt. Ltd.',
-            'Aug 2023 – Present',
-            'Hisar'
+            currentJob?.title || 'Job Title',
+            currentJob?.company || 'Company',
+            currentJob?.duration || 'Duration',
+            currentJob?.location || 'Location'
           ),
           createBullet('{{B1}}'),
           createBullet('{{B2}}'),
@@ -239,152 +250,79 @@ async function generateTemplate() {
           createBullet('{{B4}}'),
           createBullet('{{B5}}'),
 
-          // Previous Experience - Internshala (static)
-          ...createExperienceHeader(
-            'Python Development Intern',
-            'Internshala',
-            'May 2023 – Jul 2023',
-            'Remote'
-          ),
-          createBullet('Built automation and data processing scripts using Python, Pandas, and Requests'),
-          createBullet('Developed REST APIs and backend logic for server-side applications'),
-          createBullet('Gained hands-on experience in debugging and API integration tasks'),
+          // Previous Experience (static bullets from resumeData.json)
+          ...(previousJobs.flatMap(job => [
+            ...createExperienceHeader(
+              job.title || 'Job Title',
+              job.company || 'Company',
+              job.duration || 'Duration',
+              job.location || 'Location'
+            ),
+            ...(job.bullets || []).map(bullet => createBullet(bullet)),
+          ])),
 
           // ============ PROJECTS ============
           ...createSectionHeader('Projects'),
 
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'GetStatus – Urban Renewal Platform',
-                bold: true,
-                size: fontSize.normal,
-              }),
-            ],
-            spacing: { before: 80 },
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'Enterprise platform for managing urban projects in Israel using React, Angular, Node.js, MongoDB. Improved stakeholder communication and project transparency.',
-                size: fontSize.small,
-                color: colors.secondary,
-              }),
-            ],
-            spacing: { after: 80 },
-          }),
+          // Personal projects from resumeData.json (AI-tailored descriptions)
+          ...(personalProjects.flatMap((project, index) => {
+            const projectKey = project.name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+            const isLast = index === personalProjects.length - 1;
 
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'HRMS Internal System',
-                bold: true,
-                size: fontSize.normal,
+            return [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: project.name || 'Project Name',
+                    bold: true,
+                    size: fontSize.normal,
+                  }),
+                ],
+                spacing: { before: index === 0 ? 80 : 0 },
               }),
-            ],
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'Full-stack HR management system with attendance integration, leave & loan modules, and responsive dashboards.',
-                size: fontSize.small,
-                color: colors.secondary,
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `{{P_${projectKey}}}`,
+                    size: fontSize.small,
+                    color: colors.secondary,
+                  }),
+                ],
+                spacing: { after: isLast ? 100 : 80 },
               }),
-            ],
-            spacing: { after: 80 },
-          }),
-
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'Bibico – Influencer Marketing Platform',
-                bold: true,
-                size: fontSize.normal,
-              }),
-            ],
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'Multi-language platform connecting brands and influencers with i18n, Express, Sequelize, and SQL.',
-                size: fontSize.small,
-                color: colors.secondary,
-              }),
-            ],
-            spacing: { after: 80 },
-          }),
-
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'Personal Portfolio – ajayluhach.in',
-                bold: true,
-                size: fontSize.normal,
-              }),
-            ],
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'Next.js portfolio with multi-theme setup, responsive design, animations, and SSR/SEO optimization.',
-                size: fontSize.small,
-                color: colors.secondary,
-              }),
-            ],
-            spacing: { after: 100 },
-          }),
+            ];
+          })),
 
           // ============ EDUCATION ============
           ...createSectionHeader('Education'),
 
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'Diploma in Computer Engineering',
-                bold: true,
-                size: fontSize.normal,
-              }),
-              new TextRun({
-                text: ' — Chhotu Ram Polytechnic, Rohtak',
-                size: fontSize.normal,
-              }),
-            ],
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'Aug 2021 - July 2023 | 84%',
-                size: fontSize.small,
-                color: colors.secondary,
-                italics: true,
-              }),
-            ],
-            spacing: { after: 80 },
-          }),
-
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'High School (Non-Medical)',
-                bold: true,
-                size: fontSize.normal,
-              }),
-              new TextRun({
-                text: ' — Indus Public School, Jind',
-                size: fontSize.normal,
-              }),
-            ],
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'June 2017 - July 2019 | 78.8%',
-                size: fontSize.small,
-                color: colors.secondary,
-                italics: true,
-              }),
-            ],
-          }),
+          // Education entries from resumeData.json
+          ...(education.flatMap(edu => [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: edu.degree || 'Degree',
+                  bold: true,
+                  size: fontSize.normal,
+                }),
+                new TextRun({
+                  text: ` — ${edu.institution || 'Institution'}`,
+                  size: fontSize.normal,
+                }),
+              ],
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `${edu.duration || 'Duration'}${edu.score ? ' | ' + edu.score : ''}`,
+                  size: fontSize.small,
+                  color: colors.secondary,
+                  italics: true,
+                }),
+              ],
+              spacing: { after: 80 },
+            }),
+          ])),
         ],
       },
     ],
@@ -397,13 +335,19 @@ async function generateTemplate() {
   console.log('✅ Template created successfully!');
   console.log(`📄 Location: ${outputPath}\n`);
   console.log('Placeholders (AI-tailored for each job):');
-  console.log('  {{SUMMARY}} - Professional summary');
-  console.log('  {{SKILLS}}  - Technical skills');
-  console.log('  {{B1}}-{{B6}} - Experience bullets for current role\n');
-  console.log('Static content (unchanged):');
+  console.log('  {{SUMMARY}}       - Professional summary');
+  console.log('  {{SKILLS}}        - Technical skills');
+  console.log('  {{B1}}-{{B5}}     - Experience bullets (mention work projects by name)');
+
+  // Show personal project placeholders dynamically
+  (resumeData.projects || []).forEach(project => {
+    const projectKey = project.name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    console.log(`  {{P_${projectKey}}} - ${project.name} description`);
+  });
+
+  console.log('\nStatic content (unchanged):');
   console.log('  - Personal info, contact details');
-  console.log('  - Previous experience (Internshala)');
-  console.log('  - Projects section');
+  console.log('  - Previous experience bullets');
   console.log('  - Education section\n');
 }
 

@@ -14,19 +14,16 @@ const __dirname = dirname(__filename);
 // Output directory for resumes
 const outputDir = join(homedir(), 'Music');
 
-// Find next available resume number
-function getNextResumeNumber() {
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
-    return 1;
-  }
-
-  const files = fs.readdirSync(outputDir);
-  const resumeNumbers = files
-    .filter(f => f.match(/^resume_(\d+)\.pdf$/))
-    .map(f => parseInt(f.match(/^resume_(\d+)\.pdf$/)[1]));
-
-  return resumeNumbers.length > 0 ? Math.max(...resumeNumbers) + 1 : 1;
+/**
+ * Build output filename from user name and job role
+ * e.g. "Ajay Kumar" + "MERN Developer" → "Ajay Kumar_MERN Developer"
+ */
+function buildOutputBasename(name, role) {
+  // Sanitize for filesystem: remove characters not allowed in filenames
+  const sanitize = (str) => str.replace(/[<>:"/\\|?*]/g, '').trim();
+  const safeName = sanitize(name || 'Resume');
+  const safeRole = sanitize(role || 'Resume');
+  return `${safeName}_${safeRole}`;
 }
 
 export const config = {
@@ -35,19 +32,96 @@ export const config = {
     resumeData: join(__dirname, 'resumeData.json'),
     template: join(__dirname, 'template.docx'),
     outputDir: outputDir,
-    getOutputPaths: () => {
-      const num = getNextResumeNumber();
+    getOutputPaths: (name, role) => {
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+      const basename = buildOutputBasename(name, role);
       return {
-        docx: join(outputDir, `resume_${num}.docx`),
-        pdf: join(outputDir, `resume_${num}.pdf`),
+        docx: join(outputDir, `${basename}.docx`),
+        pdf: join(outputDir, `${basename}.pdf`),
       };
     },
   },
 
   // AI Configuration
   ai: {
+    // Provider: 'gemini' (free tier) or 'bedrock' (AWS, paid)
+    provider: process.env.AI_PROVIDER || 'bedrock',
+
+    // ─────────────────────────────────────────────────────────
+    // GEMINI CONFIG (Google AI - Free tier with rate limits)
+    // ─────────────────────────────────────────────────────────
+    gemini: {
+      apiKey: process.env.GEMINI_API_KEY || '',
+      // Model pool for rotation (ordered by preference)
+      models: {
+        analysis: [
+          'gemini-2.5-pro',
+          'gemini-3-pro-preview',
+          'gemini-2.5-flash',
+          'gemini-3-flash-preview',
+          'gemini-2.0-flash',
+          'gemini-2.0-flash-lite',
+        ],
+        rewrite: [
+          'gemini-2.5-pro',
+          'gemini-3-pro-preview',
+          'gemini-2.5-flash',
+          'gemini-3-flash-preview',
+          'gemini-2.0-flash',
+          'gemini-2.0-flash-lite',
+        ],
+        scoring: [
+          'gemini-2.0-flash-lite',
+          'gemini-2.5-flash-lite',
+          'gemini-2.0-flash',
+          'gemini-3-flash-preview',
+          'gemini-2.5-flash',
+          'gemini-2.5-pro',
+        ],
+      },
+      rateLimitCooldown: 60000,
+    },
+
+    // ─────────────────────────────────────────────────────────
+    // BEDROCK CONFIG (AWS - Paid, with prompt caching support)
+    // ─────────────────────────────────────────────────────────
+    bedrock: {
+      region: process.env.AWS_REGION || 'us-east-1',
+
+      // Model configuration per step
+      models: {
+        // Step 1: Analysis - Claude Haiku 4.5
+        analysis: {
+          modelId: 'us.anthropic.claude-haiku-4-5-20251001-v1:0',
+          maxTokens: 3072, // Increased from 2048 to avoid JSON truncation
+        },
+        // Step 2: Rewrite - Claude Haiku 4.5
+        rewrite: {
+          modelId: 'us.anthropic.claude-haiku-4-5-20251001-v1:0',
+          maxTokens: 2048,
+        },
+        // Step 3: Scoring - Deterministic (no AI)
+      },
+
+      // Legacy config for backward compatibility
+      modelId: 'us.anthropic.claude-haiku-4-5-20251001-v1:0',
+      maxTokens: {
+        analysis: 3072, // Increased from 2048 to avoid JSON truncation
+        rewrite: 2048,
+        scoring: 0,
+      },
+    },
+
+    // Legacy: keep for backward compatibility with ai.js
     geminiApiKey: process.env.GEMINI_API_KEY || '',
-    model: 'gemini-2.5-flash',
+    models: {
+      analysis: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'],
+      rewrite: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'],
+      scoring: ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-2.5-flash'],
+    },
+    rateLimitCooldown: 60000,
   },
 
   // Output options
