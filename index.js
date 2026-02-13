@@ -16,6 +16,8 @@ import config from './config.js';
 import { readClipboard, validateJobDescription } from './services/clipboard.js';
 import { generateDocx } from './services/document.js';
 import { convertToPdf, cleanupDocx, checkLibreOffice } from './services/converter.js';
+import { generateEmail, generateLinkedInDM } from './services/email-generator.js';
+import { saveLinkedInDM, saveEmailData } from './services/contact-logger.js';
 
 // Dynamic import based on provider
 async function getAIService() {
@@ -134,6 +136,51 @@ function displaySummary(aiResponse, resumeData) {
     const key = project.name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
     console.log(`${project.name}: ${aiResponse[key] || ''}`);
   });
+
+  // Generate and display email content (template-based)
+  const emailData = generateEmail(aiResponse, resumeData);
+  if (emailData) {
+    console.log('\n📧 GENERATED EMAIL:');
+    console.log('\n   Subject:');
+    console.log(`   ${emailData.subject}`);
+    console.log('\n   Body:');
+    emailData.body.split('\n').forEach(line => console.log(`   ${line}`));
+    console.log('\n📬 SEND TO:');
+    console.log(`   ${emailData.to}`);
+
+    // Save email data to contact log
+    saveEmailData(emailData.to, emailData.subject, emailData.body);
+  }
+
+  // Generate and display LinkedIn DM (template-based, always generated)
+  const linkedInDM = generateLinkedInDM(aiResponse, resumeData);
+  console.log('\n💼 LINKEDIN DM:');
+
+  if (linkedInDM.linkedInUrl) {
+    console.log(`\n   Connect with: ${linkedInDM.contactName || 'Recruiter'}`);
+    console.log(`   LinkedIn: ${linkedInDM.linkedInUrl}`);
+  } else if (linkedInDM.instruction) {
+    console.log(`\n   ℹ️  ${linkedInDM.instruction}`);
+  }
+
+  console.log('\n   Message (copy & paste to LinkedIn):');
+  console.log(`   ${linkedInDM.message}`);
+  console.log(`   Length: ${linkedInDM.message.length} characters`);
+
+  // Save LinkedIn DM message to contact log
+  saveLinkedInDM(linkedInDM.linkedInUrl, linkedInDM.message, linkedInDM.contactName);
+
+  // Display additional contact info if available
+  if (aiResponse.contact) {
+    const { name, email, phone, link } = aiResponse.contact;
+    if (name || email || phone || link) {
+      console.log('\n📬 CONTACT INFO:');
+      if (name) console.log(`   Name:  ${name}`);
+      if (email) console.log(`   Email: ${email}`);
+      if (phone) console.log(`   Phone: ${phone}`);
+      if (link) console.log(`   Link:  ${link}`);
+    }
+  }
 
   console.log('\n' + '═'.repeat(60) + '\n');
 }

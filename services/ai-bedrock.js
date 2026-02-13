@@ -786,6 +786,7 @@ export async function tailorResume(jobDescription, resumeData) {
   return {
     ...rewritten,
     jdTitle: analysis.jdTitle || null,
+    jdCompany: analysis.jdCompany || null,
     contact: analysis.contact,
   };
 }

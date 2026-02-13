@@ -10,7 +10,9 @@
   "scripts": {
     "start": "node index.js",
     "setup": "node scripts/generate-template.js",
-    "install-pdf": "sudo apt install -y libreoffice-writer && echo '✅ LibreOffice installed! PDF conversion ready.'"
+    "install-pdf": "sudo apt install -y libreoffice-writer && echo '✅ LibreOffice installed! PDF conversion ready.'",
+    "send-emails": "node scripts/send-emails.js",
+    "verify-smtp": "node scripts/send-emails.js --verify"
   },
   "keywords": [
     "resume",
@@ -29,6 +31,7 @@
     "docxtemplater": "^3.50.0",
     "dotenv": "^17.2.3",
     "mammoth": "^1.11.0",
+    "nodemailer": "^8.0.1",
     "pdf-lib": "^1.17.1",
     "pizzip": "^3.1.7"
   }
