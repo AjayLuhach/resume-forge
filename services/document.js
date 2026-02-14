@@ -17,7 +17,7 @@ function loadTemplate(templatePath) {
     throw new Error(
       `Template file not found: ${templatePath}\n` +
       'Please create a template.docx file with placeholders:\n' +
-      '{{SUMMARY}}, {{SKILLS}}, {{B1}}, {{B2}}, {{B3}}, {{B4}}, {{B5}}, {{B6}}'
+      '{{NAME}}, {{SUMMARY}}, {{SKILLS}}, {{#experiences}}, {{#projects}}, {{#education}}'
     );
   }
 
@@ -41,30 +41,47 @@ function loadTemplate(templatePath) {
  */
 function prepareTemplateData(aiResponse, resumeData) {
   const { title, summary, bullets, skills } = aiResponse;
+  const personalInfo = resumeData.personalInfo || {};
 
-  // Support 5 or 6 bullets
-  const paddedBullets = [...bullets];
-  while (paddedBullets.length < 5) {
-    paddedBullets.push('');
-  }
-
+  // Personal info
   const templateData = {
-    TITLE: title || 'Full Stack Developer (MERN)',
+    TITLE: title || 'Full Stack Developer',
     SUMMARY: summary,
     SKILLS: skills,
-    B1: paddedBullets[0] || '',
-    B2: paddedBullets[1] || '',
-    B3: paddedBullets[2] || '',
-    B4: paddedBullets[3] || '',
-    B5: paddedBullets[4] || '',
+    NAME: personalInfo.name || '',
+    LOCATION: personalInfo.location || '',
+    EMAIL: personalInfo.email || '',
+    PHONE: personalInfo.phone || '',
+    LINKEDIN: personalInfo.linkedin || '',
+    GITHUB: personalInfo.github || '',
+    PORTFOLIO: personalInfo.portfolio || '',
   };
 
-  // Build personal project mappings dynamically from resumeData.json
-  (resumeData.projects || []).forEach(project => {
+  // Experience entries (loop data)
+  templateData.experiences = (resumeData.experience || []).map(exp => ({
+    title: exp.title || '',
+    company: exp.company || '',
+    location: exp.location || '',
+    duration: exp.duration || '',
+    bullets: exp.isCurrent ? (bullets || []) : (exp.bullets || []),
+  }));
+
+  // Personal projects (loop data) with AI-generated descriptions
+  templateData.projects = (resumeData.projects || []).map(project => {
     const key = project.name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-    const placeholderKey = `P_${project.name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()}`;
-    templateData[placeholderKey] = aiResponse[key] || '';
+    return {
+      name: project.name || '',
+      description: aiResponse[key] || '',
+    };
   });
+
+  // Education entries (loop data)
+  templateData.education = (resumeData.education || []).map(edu => ({
+    degree: edu.degree || '',
+    institution: edu.institution || '',
+    duration: edu.duration || '',
+    score: edu.score || '',
+  }));
 
   return templateData;
 }
@@ -84,17 +101,19 @@ export async function generateDocx(aiResponse, outputPaths, resumeData) {
     const templateData = prepareTemplateData(aiResponse, resumeData);
 
     console.log('📝 Replacing placeholders:');
+    console.log(`   - Name: ${templateData.NAME}`);
     console.log(`   - Title: ${templateData.TITLE}`);
     console.log(`   - Summary: ${templateData.SUMMARY.substring(0, 50)}...`);
     console.log(`   - Skills: ${templateData.SKILLS.substring(0, 50)}...`);
-    console.log(`   - Bullets: ${aiResponse.bullets.length} points`);
-
-    // Display personal projects dynamically
-    (resumeData.projects || []).forEach(project => {
-      const placeholderKey = `P_${project.name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()}`;
-      const value = templateData[placeholderKey] || '';
-      console.log(`   - ${project.name}: ${value.substring(0, 50)}...`);
+    console.log(`   - Experiences: ${templateData.experiences.length} entries`);
+    templateData.experiences.forEach(exp => {
+      console.log(`     • ${exp.title} @ ${exp.company} (${exp.bullets.length} bullets)`);
     });
+    console.log(`   - Projects: ${templateData.projects.length} entries`);
+    templateData.projects.forEach(proj => {
+      console.log(`     • ${proj.name}: ${(proj.description || '').substring(0, 50)}...`);
+    });
+    console.log(`   - Education: ${templateData.education.length} entries`);
 
     // Replace placeholders
     doc.render(templateData);
@@ -140,7 +159,7 @@ export function validateTemplate() {
 
     // Get all placeholders in template
     const text = doc.getFullText();
-    const requiredPlaceholders = ['SUMMARY', 'B1', 'B2', 'B3', 'B4'];
+    const requiredPlaceholders = ['NAME', 'SUMMARY', 'SKILLS'];
     const missingPlaceholders = requiredPlaceholders.filter(
       p => !text.includes(`{{${p}}}`)
     );

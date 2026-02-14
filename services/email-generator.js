@@ -31,7 +31,7 @@ export function generateEmail(analysis, resumeData) {
 
 I hope this message finds you well. I am writing to express my interest in the ${jobTitle} role at ${company}. Please find my resume attached for your consideration.
 
-With hands-on experience in the MERN stack and a strong focus on building scalable, production-grade web applications, I am confident in my ability to contribute effectively to your team.
+With hands-on experience in ${resumeData?.meta?.stack || 'full stack'} development and a strong focus on building scalable, production-grade web applications, I am confident in my ability to contribute effectively to your team.
 
 I would welcome the opportunity to discuss how my skills align with your requirements.${portfolio ? `\n\nPortfolio: ${portfolio}` : ''}${linkedin ? `\nLinkedIn: ${linkedin}` : ''}${phone ? `\nPhone: ${phone}` : ''}
 
@@ -69,7 +69,8 @@ export function generateLinkedInDM(analysis, resumeData) {
   // Use contact name if available, otherwise generic greeting
   const greeting = contactName ? `Hi ${contactName}!` : `Hi there!`;
 
-  const message = `${greeting} Excited about the ${jobTitle} role at ${company}. With ${yearsExp} years in MERN stack, I'd love to connect and discuss how I can contribute to your team. Looking forward to connecting!`;
+  const stack = resumeData?.meta?.stack || 'full stack';
+  const message = `${greeting} Excited about the ${jobTitle} role at ${company}. With ${yearsExp} years in ${stack} development, I'd love to connect and discuss how I can contribute to your team. Looking forward to connecting!`;
 
   return {
     linkedInUrl, // null if no LinkedIn URL provided

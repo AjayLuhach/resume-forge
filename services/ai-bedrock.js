@@ -247,6 +247,7 @@ EXTRACTION RULES:
      • Has "Express.js" → CANNOT claim "NestJS", "Fastify", "Koa" (different frameworks)
      • Has "AWS" → CANNOT claim "Azure", "GCP" (different cloud providers)
      • Has "React" → CANNOT claim "Angular", "Vue.js" (different frameworks)
+     Never claim alternatives of the frameworks ever or db etc if they are not in resume skills
 
    - no: Different tech in same category (put them here, NOT in "claim")
    - miss: Critical requirements candidate lacks
