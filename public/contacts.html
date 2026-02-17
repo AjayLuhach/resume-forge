@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contacts | Resume Forge</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #12121a;
+    --bg3: #1a1a2e;
+    --surface: rgba(255,255,255,0.03);
+    --border: rgba(255,255,255,0.06);
+    --text: #e4e4e7;
+    --text2: #a1a1aa;
+    --text3: #71717a;
+    --accent: #818cf8;
+    --accent2: #6366f1;
+    --green: #34d399;
+    --green2: #10b981;
+    --amber: #fbbf24;
+    --rose: #fb7185;
+    --cyan: #22d3ee;
+    --purple: #a78bfa;
+    --glow: rgba(99,102,241,0.15);
+    --glow2: rgba(99,102,241,0.08);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(99,102,241,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 50% at 80% 90%, rgba(168,85,247,0.06) 0%, transparent 50%);
+    pointer-events: none; z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none; z-index: 0;
+  }
+
+  /* Nav */
+  .nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 1.5rem;
+  }
+
+  .nav-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    height: 56px;
+  }
+
+  .nav-brand {
+    font-size: 0.95rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #fff, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-decoration: none;
+    letter-spacing: -0.02em;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .nav-links a {
+    padding: 0.45rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text3);
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--text); background: var(--surface); }
+  .nav-links a.active { color: var(--accent); background: var(--glow2); }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .page-header {
+    margin-bottom: 2rem;
+  }
+
+  .page-header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #fff 0%, var(--cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.4rem;
+  }
+
+  .page-header p { color: var(--text3); font-size: 0.9rem; }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.3;
+  }
+
+  .stat-val {
+    font-size: 1.8rem;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1.1;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    margin-top: 0.3rem;
+  }
+
+  /* Filter bar */
+  .filter-bar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .filter-chip {
+    padding: 0.4rem 0.9rem;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text3);
+    font-size: 0.75rem;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .filter-chip:hover { border-color: var(--accent); color: var(--text2); }
+  .filter-chip.active { border-color: var(--accent); color: var(--accent); background: var(--glow2); }
+
+  /* Contact cards */
+  .contact-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .contact-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .contact-card:hover { border-color: rgba(255,255,255,0.1); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .cc-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.2rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cc-avatar {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+
+  .cc-info { flex: 1; min-width: 0; }
+
+  .cc-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cc-company {
+    font-size: 0.78rem;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.15rem;
+  }
+
+  .cc-date {
+    font-size: 0.7rem;
+    color: var(--text3);
+    font-family: 'JetBrains Mono', monospace;
+    flex-shrink: 0;
+  }
+
+  .cc-badges {
+    display: flex;
+    gap: 0.4rem;
+    flex-shrink: 0;
+  }
+
+  .badge {
+    padding: 0.2rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .badge-email { background: rgba(251,191,36,0.12); color: var(--amber); }
+  .badge-linkedin { background: rgba(34,211,238,0.12); color: var(--cyan); }
+  .badge-sent { background: rgba(52,211,153,0.12); color: var(--green); }
+  .badge-pending { background: rgba(251,113,133,0.12); color: var(--rose); }
+
+  .cc-body {
+    padding: 1.2rem 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .cc-body { grid-template-columns: 1fr; }
+  }
+
+  .cc-section { }
+
+  .cc-section-title {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .cc-section-title .dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+  }
+
+  .cc-contacts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .cc-contact-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.7rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.8rem;
+  }
+
+  .cc-contact-item .type-icon {
+    width: 22px; height: 22px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.55rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .cc-contact-item .value {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text2);
+  }
+
+  .cc-contact-item a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .cc-contact-item a:hover { text-decoration: underline; }
+
+  .cc-contact-item .name-tag {
+    font-size: 0.68rem;
+    color: var(--text3);
+    flex-shrink: 0;
+  }
+
+  /* Message preview */
+  .msg-preview {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+    font-size: 0.8rem;
+    line-height: 1.65;
+    color: var(--text2);
+    max-height: 120px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+
+  .msg-preview::-webkit-scrollbar { width: 4px; }
+  .msg-preview::-webkit-scrollbar-track { background: transparent; }
+  .msg-preview::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .desc-text {
+    font-size: 0.78rem;
+    color: var(--text3);
+    line-height: 1.5;
+    padding: 0.5rem 0;
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text3);
+  }
+
+  .empty-state .icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.5; }
+  .empty-state p { font-size: 0.9rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="/">Resume Forge</a>
+    <div class="nav-links">
+      <a href="/">Generate</a>
+      <a href="/contacts.html" class="active">Contacts</a>
+      <a href="/costs.html">Costs</a>
+      <a href="/history.html">History</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Contacts & Outreach</h1>
+    <p>All recruiter contacts, emails, and LinkedIn DMs from your applications</p>
+  </div>
+
+  <div class="stats-row" id="statsRow"></div>
+
+  <div class="filter-bar" id="filterBar">
+    <button class="filter-chip active" data-filter="all">All</button>
+    <button class="filter-chip" data-filter="email">Has Email</button>
+    <button class="filter-chip" data-filter="linkedin">Has LinkedIn</button>
+    <button class="filter-chip" data-filter="sent">Email Sent</button>
+    <button class="filter-chip" data-filter="pending">Pending</button>
+  </div>
+
+  <div class="contact-list" id="contactList">
+    <div class="empty-state">
+      <div class="icon">&#128269;</div>
+      <p>Loading contacts...</p>
+    </div>
+  </div>
+</div>
+
+<script>
+let allContacts = [];
+let currentFilter = 'all';
+
+const colors = [
+  { bg: 'rgba(129,140,248,0.15)', fg: '#818cf8' },
+  { bg: 'rgba(52,211,153,0.15)', fg: '#34d399' },
+  { bg: 'rgba(34,211,238,0.15)', fg: '#22d3ee' },
+  { bg: 'rgba(251,191,36,0.15)', fg: '#fbbf24' },
+  { bg: 'rgba(251,113,133,0.15)', fg: '#fb7185' },
+  { bg: 'rgba(167,139,250,0.15)', fg: '#a78bfa' },
+];
+
+function getInitials(str) {
+  if (!str) return '??';
+  return str.split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase();
+}
+
+function getColor(i) { return colors[i % colors.length]; }
+
+function escHtml(str) {
+  if (!str) return '';
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+async function loadContacts() {
+  try {
+    const res = await fetch('/api/contacts');
+    allContacts = await res.json();
+    allContacts.reverse(); // newest first
+    renderStats();
+    renderContacts();
+  } catch {
+    document.getElementById('contactList').innerHTML = '<div class="empty-state"><div class="icon">&#9888;</div><p>Failed to load contacts</p></div>';
+  }
+}
+
+function renderStats() {
+  const total = allContacts.length;
+  const withEmail = allContacts.filter(c => c.contacts?.some(x => x.type === 'email')).length;
+  const withLinkedIn = allContacts.filter(c => c.linkedInDM?.linkedInUrl).length;
+  const sent = allContacts.filter(c => c.emailSent).length;
+  const companies = new Set(allContacts.map(c => c.job?.company).filter(Boolean)).size;
+
+  const stats = [
+    { val: total, label: 'Total Applications', color: 'var(--accent)' },
+    { val: companies, label: 'Companies', color: 'var(--purple)' },
+    { val: withEmail, label: 'Has Email', color: 'var(--amber)' },
+    { val: withLinkedIn, label: 'Has LinkedIn', color: 'var(--cyan)' },
+    { val: sent, label: 'Emails Sent', color: 'var(--green)' },
+  ];
+
+  document.getElementById('statsRow').innerHTML = stats.map(s =>
+    `<div class="stat-card"><div class="stat-val" style="color:${s.color}">${s.val}</div><div class="stat-label">${s.label}</div></div>`
+  ).join('');
+}
+
+function filterContacts() {
+  return allContacts.filter(c => {
+    if (currentFilter === 'all') return true;
+    if (currentFilter === 'email') return c.contacts?.some(x => x.type === 'email');
+    if (currentFilter === 'linkedin') return c.linkedInDM?.linkedInUrl;
+    if (currentFilter === 'sent') return c.emailSent;
+    if (currentFilter === 'pending') return !c.emailSent;
+    return true;
+  });
+}
+
+function renderContacts() {
+  const filtered = filterContacts();
+  const list = document.getElementById('contactList');
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">&#128203;</div><p>No contacts match this filter</p></div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map((c, i) => {
+    const color = getColor(i);
+    const title = c.job?.title || 'Unknown Role';
+    const company = c.job?.company || 'Unknown';
+    const date = c.date || '';
+    const initials = getInitials(company);
+
+    // Badges
+    let badges = '';
+    const hasEmail = c.contacts?.some(x => x.type === 'email');
+    const hasLinkedIn = c.linkedInDM?.linkedInUrl;
+    if (hasEmail) badges += '<span class="badge badge-email">Email</span>';
+    if (hasLinkedIn) badges += '<span class="badge badge-linkedin">LinkedIn</span>';
+    if (c.emailSent) badges += '<span class="badge badge-sent">Sent</span>';
+    else if (hasEmail) badges += '<span class="badge badge-pending">Pending</span>';
+
+    // Contacts list
+    let contactsHtml = '';
+    (c.contacts || []).forEach(ct => {
+      const isLink = ct.type === 'link' || ct.value?.startsWith('http');
+      const isEmail = ct.type === 'email';
+      const iconBg = isEmail ? 'rgba(251,191,36,0.15)' : 'rgba(34,211,238,0.15)';
+      const iconFg = isEmail ? 'var(--amber)' : 'var(--cyan)';
+      const iconText = isEmail ? '@' : 'in';
+      const val = isLink
+        ? `<a href="${escHtml(ct.value)}" target="_blank">${escHtml(ct.value)}</a>`
+        : isEmail
+        ? `<a href="mailto:${escHtml(ct.value)}">${escHtml(ct.value)}</a>`
+        : escHtml(ct.value);
+      const nameTag = ct.name ? `<span class="name-tag">${escHtml(ct.name)}</span>` : '';
+      contactsHtml += `<div class="cc-contact-item"><div class="type-icon" style="background:${iconBg};color:${iconFg}">${iconText}</div><div class="value">${val}</div>${nameTag}</div>`;
+    });
+
+    // LinkedIn DM
+    let dmHtml = '';
+    if (c.linkedInDM?.message) {
+      dmHtml = `<div class="cc-section"><div class="cc-section-title"><span class="dot" style="background:var(--cyan)"></span>LinkedIn DM</div><div class="msg-preview">${escHtml(c.linkedInDM.message)}</div></div>`;
+    }
+
+    // Email
+    let emailHtml = '';
+    if (c.emailData?.body) {
+      emailHtml = `<div class="cc-section"><div class="cc-section-title"><span class="dot" style="background:var(--amber)"></span>Email — ${escHtml(c.emailData.subject || '')}</div><div class="msg-preview">${escHtml(c.emailData.body)}</div></div>`;
+    }
+
+    // Description
+    const descHtml = c.description ? `<div class="desc-text">${escHtml(c.description)}</div>` : '';
+
+    return `<div class="contact-card" style="animation-delay:${i * 0.03}s">
+      <div class="cc-header">
+        <div class="cc-avatar" style="background:${color.bg};color:${color.fg}">${initials}</div>
+        <div class="cc-info">
+          <div class="cc-title">${escHtml(title)}</div>
+          <div class="cc-company">${escHtml(company)}${descHtml ? ' &mdash; ' + escHtml(c.description).substring(0, 60) + '...' : ''}</div>
+        </div>
+        <div class="cc-badges">${badges}</div>
+        <div class="cc-date">${date}</div>
+      </div>
+      <div class="cc-body">
+        <div class="cc-section">
+          <div class="cc-section-title"><span class="dot" style="background:var(--accent)"></span>Contact Details</div>
+          <div class="cc-contacts-list">${contactsHtml || '<span style="font-size:0.8rem;color:var(--text3)">No direct contact info</span>'}</div>
+        </div>
+        ${dmHtml || emailHtml ? (dmHtml || '') + (emailHtml || '') : '<div class="cc-section"><div class="cc-section-title"><span class="dot" style="background:var(--text3)"></span>Messages</div><span style="font-size:0.8rem;color:var(--text3)">No messages generated</span></div>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Filter handlers
+document.getElementById('filterBar').addEventListener('click', e => {
+  if (!e.target.classList.contains('filter-chip')) return;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  e.target.classList.add('active');
+  currentFilter = e.target.dataset.filter;
+  renderContacts();
+});
+
+loadContacts();
+</script>
+</body>
+</html>

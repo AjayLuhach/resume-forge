@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resume History | Resume Forge</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #12121a;
+    --surface: rgba(255,255,255,0.03);
+    --border: rgba(255,255,255,0.06);
+    --text: #e4e4e7;
+    --text2: #a1a1aa;
+    --text3: #71717a;
+    --accent: #818cf8;
+    --accent2: #6366f1;
+    --green: #34d399;
+    --green2: #10b981;
+    --amber: #fbbf24;
+    --rose: #fb7185;
+    --cyan: #22d3ee;
+    --purple: #a78bfa;
+    --glow: rgba(99,102,241,0.15);
+    --glow2: rgba(99,102,241,0.08);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 80% 10%, rgba(167,139,250,0.07) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 50% at 20% 90%, rgba(251,191,36,0.05) 0%, transparent 50%);
+    pointer-events: none; z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none; z-index: 0;
+  }
+
+  .nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 1.5rem;
+  }
+
+  .nav-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    height: 56px;
+  }
+
+  .nav-brand {
+    font-size: 0.95rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #fff, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-decoration: none;
+  }
+
+  .nav-links { display: flex; gap: 0.25rem; }
+
+  .nav-links a {
+    padding: 0.45rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text3);
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--text); background: var(--surface); }
+  .nav-links a.active { color: var(--purple); background: rgba(167,139,250,0.08); }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .page-header { margin-bottom: 2rem; }
+
+  .page-header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #fff 0%, var(--purple) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.4rem;
+  }
+
+  .page-header p { color: var(--text3); font-size: 0.9rem; }
+
+  /* Stats */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--purple), transparent);
+    opacity: 0.3;
+  }
+
+  .stat-val {
+    font-size: 1.8rem;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1.1;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    margin-top: 0.3rem;
+  }
+
+  /* Score distribution chart */
+  .chart-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .chart-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--amber), transparent);
+    opacity: 0.3;
+  }
+
+  .chart-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    margin-bottom: 1rem;
+  }
+
+  .score-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 120px;
+  }
+
+  .score-bar {
+    flex: 1;
+    min-width: 6px;
+    max-width: 30px;
+    border-radius: 4px 4px 0 0;
+    transition: height 0.6s ease;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .score-bar:hover { filter: brightness(1.3); }
+
+  .score-bar .tip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.65rem;
+    white-space: nowrap;
+    z-index: 10;
+    color: var(--text2);
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1.5;
+  }
+
+  .score-bar:hover .tip { display: block; }
+
+  /* History cards */
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .history-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .history-card:hover { border-color: rgba(255,255,255,0.1); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hc-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .hc-score-badge {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    flex-shrink: 0;
+  }
+
+  .hc-info { flex: 1; min-width: 0; }
+
+  .hc-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .hc-meta {
+    font-size: 0.73rem;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-top: 0.2rem;
+  }
+
+  .hc-meta .sep { color: var(--border); }
+
+  .hc-penalties {
+    display: flex;
+    gap: 0.3rem;
+    flex-shrink: 0;
+  }
+
+  .penalty-tag {
+    padding: 0.2rem 0.5rem;
+    border-radius: 5px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    background: rgba(251,113,133,0.1);
+    color: var(--rose);
+  }
+
+  .hard-reject-tag {
+    background: rgba(251,113,133,0.2);
+    color: var(--rose);
+    padding: 0.2rem 0.5rem;
+    border-radius: 5px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .hc-date {
+    font-size: 0.7rem;
+    color: var(--text3);
+    font-family: 'JetBrains Mono', monospace;
+    flex-shrink: 0;
+  }
+
+  .hc-expand-icon {
+    color: var(--text3);
+    transition: transform 0.2s;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+
+  .history-card.open .hc-expand-icon { transform: rotate(180deg); }
+
+  .hc-body {
+    display: none;
+    padding: 1.2rem 1.5rem;
+  }
+
+  .history-card.open .hc-body { display: block; }
+
+  .hc-section {
+    margin-bottom: 1.2rem;
+  }
+
+  .hc-section:last-child { margin-bottom: 0; }
+
+  .hc-section-title {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .hc-section-title .dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+  }
+
+  .hc-content {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+    font-size: 0.82rem;
+    line-height: 1.65;
+    color: var(--text2);
+  }
+
+  .hc-skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .hc-skill {
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    font-size: 0.72rem;
+    color: var(--text2);
+  }
+
+  .hc-bullets {
+    list-style: none;
+    padding: 0;
+  }
+
+  .hc-bullets li {
+    padding: 0.4rem 0 0.4rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.8rem;
+    color: var(--text2);
+    line-height: 1.55;
+    position: relative;
+  }
+
+  .hc-bullets li:last-child { border-bottom: none; }
+
+  .hc-bullets li::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0.85rem;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  /* Keywords */
+  .keywords-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+  }
+
+  @media (max-width: 600px) { .keywords-grid { grid-template-columns: 1fr; } }
+
+  .kw-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .kw-tag {
+    padding: 0.2rem 0.5rem;
+    border-radius: 5px;
+    font-size: 0.68rem;
+    font-weight: 500;
+  }
+
+  .kw-matched { background: rgba(52,211,153,0.1); color: var(--green); }
+  .kw-missing { background: rgba(251,113,133,0.1); color: var(--rose); }
+
+  /* Search */
+  .search-bar {
+    margin-bottom: 1.5rem;
+  }
+
+  .search-input {
+    width: 100%;
+    max-width: 400px;
+    padding: 0.65rem 1rem;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text3); }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="/">Resume Forge</a>
+    <div class="nav-links">
+      <a href="/">Generate</a>
+      <a href="/contacts.html">Contacts</a>
+      <a href="/costs.html">Costs</a>
+      <a href="/history.html" class="active">History</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Resume History</h1>
+    <p>Every tailored resume generated, with ATS scores and keyword analysis</p>
+  </div>
+
+  <div class="stats-row" id="statsRow"></div>
+  <div id="chartSection"></div>
+
+  <div class="search-bar">
+    <input type="text" class="search-input" id="searchInput" placeholder="Search by title, company, or skill...">
+  </div>
+
+  <div class="history-list" id="historyList">
+    <div style="text-align:center;padding:3rem;color:var(--text3)">Loading history...</div>
+  </div>
+</div>
+
+<script>
+let allHistory = [];
+
+function escHtml(str) {
+  if (!str) return '';
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function scoreColor(score) {
+  if (score >= 70) return { bg: 'rgba(52,211,153,0.12)', fg: 'var(--green)' };
+  if (score >= 50) return { bg: 'rgba(251,191,36,0.12)', fg: 'var(--amber)' };
+  return { bg: 'rgba(251,113,133,0.12)', fg: 'var(--rose)' };
+}
+
+function barColor(score) {
+  if (score >= 70) return 'var(--green)';
+  if (score >= 50) return 'var(--amber)';
+  return 'var(--rose)';
+}
+
+async function loadHistory() {
+  try {
+    const res = await fetch('/api/history');
+    allHistory = await res.json();
+    allHistory.reverse(); // newest first
+    renderStats();
+    renderChart();
+    renderHistory(allHistory);
+  } catch {
+    document.getElementById('historyList').innerHTML = '<div style="text-align:center;padding:3rem;color:var(--rose)">Failed to load history</div>';
+  }
+}
+
+function renderStats() {
+  const total = allHistory.length;
+  const scores = allHistory.map(h => h.score?.final || 0).filter(s => s > 0);
+  const avg = scores.length > 0 ? (scores.reduce((a,b) => a+b, 0) / scores.length) : 0;
+  const best = scores.length > 0 ? Math.max(...scores) : 0;
+  const above70 = scores.filter(s => s >= 70).length;
+  const hardRejects = allHistory.filter(h => h.score?.hardReject).length;
+  const companies = new Set(allHistory.map(h => h.job?.company).filter(Boolean)).size;
+
+  const stats = [
+    { val: total, label: 'Resumes Generated', color: 'var(--purple)' },
+    { val: companies, label: 'Companies', color: 'var(--accent)' },
+    { val: avg.toFixed(0), label: 'Avg ATS Score', color: avg >= 70 ? 'var(--green)' : 'var(--amber)' },
+    { val: best, label: 'Best Score', color: 'var(--green)' },
+    { val: above70, label: 'Score 70+', color: 'var(--cyan)' },
+    { val: hardRejects, label: 'Hard Rejects', color: hardRejects > 0 ? 'var(--rose)' : 'var(--text3)' },
+  ];
+
+  document.getElementById('statsRow').innerHTML = stats.map(s =>
+    `<div class="stat-card"><div class="stat-val" style="color:${s.color}">${s.val}</div><div class="stat-label">${s.label}</div></div>`
+  ).join('');
+}
+
+function renderChart() {
+  const items = [...allHistory].reverse(); // chronological for chart
+  if (items.length === 0) return;
+
+  const maxScore = 100;
+  const bars = items.map((h, i) => {
+    const score = h.score?.final || 0;
+    const height = Math.max(4, (score / maxScore) * 110);
+    const color = barColor(score);
+    const title = h.job?.title || 'Unknown';
+    const company = h.job?.company || '';
+    const date = h.date ? new Date(h.date).toLocaleDateString([], {month:'short', day:'numeric'}) : '';
+    return `<div class="score-bar" style="height:${height}px;background:${color}">
+      <div class="tip">${escHtml(title)}<br>${escHtml(company)}<br>Score: ${score} | ${date}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('chartSection').innerHTML = `
+    <div class="chart-card">
+      <div class="chart-title">ATS Score Timeline (oldest to newest)</div>
+      <div class="score-chart">${bars}</div>
+    </div>`;
+}
+
+function renderHistory(items) {
+  const list = document.getElementById('historyList');
+
+  if (items.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text3)">No results found</div>';
+    return;
+  }
+
+  list.innerHTML = items.map((h, i) => {
+    const score = h.score?.final || 0;
+    const sc = scoreColor(score);
+    const title = h.job?.title || 'Unknown Role';
+    const company = h.job?.company || '';
+    const lang = h.job?.language || '';
+    const yrs = h.job?.yearsRequired || '';
+    const date = h.date ? new Date(h.date).toLocaleDateString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : '';
+    const kwMatch = h.score?.keywordExact || 0;
+
+    // Penalties
+    let penaltiesHtml = '';
+    if (h.score?.hardReject) penaltiesHtml += '<span class="hard-reject-tag">Hard Reject</span>';
+    (h.score?.penalties || []).forEach(p => {
+      penaltiesHtml += `<span class="penalty-tag">${escHtml(p)}</span>`;
+    });
+
+    // Summary
+    const summary = h.resume?.summary || '';
+    const skills = h.resume?.skills || '';
+    const bullets = h.resume?.bullets || [];
+
+    // Keywords
+    const matched = h.keywords?.matched || [];
+    const missing = h.keywords?.missing || [];
+
+    let keywordsHtml = '';
+    if (matched.length > 0 || missing.length > 0) {
+      keywordsHtml = `<div class="hc-section">
+        <div class="hc-section-title"><span class="dot" style="background:var(--green)"></span>Keywords</div>
+        <div class="keywords-grid">
+          <div>
+            <div style="font-size:0.62rem;color:var(--text3);margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.08em">Matched (${matched.length})</div>
+            <div class="kw-list">${matched.map(k => `<span class="kw-tag kw-matched">${escHtml(k)}</span>`).join('')}</div>
+          </div>
+          <div>
+            <div style="font-size:0.62rem;color:var(--text3);margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.08em">Missing (${missing.length})</div>
+            <div class="kw-list">${missing.length > 0 ? missing.map(k => `<span class="kw-tag kw-missing">${escHtml(k)}</span>`).join('') : '<span style="font-size:0.72rem;color:var(--text3)">None!</span>'}</div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    return `<div class="history-card" style="animation-delay:${Math.min(i * 0.03, 0.3)}s" onclick="this.classList.toggle('open')">
+      <div class="hc-header">
+        <div class="hc-score-badge" style="background:${sc.bg};color:${sc.fg}">${score}</div>
+        <div class="hc-info">
+          <div class="hc-title">${escHtml(title)}</div>
+          <div class="hc-meta">
+            ${company ? `<span>${escHtml(company)}</span><span class="sep">|</span>` : ''}
+            ${lang ? `<span>${escHtml(lang)}</span><span class="sep">|</span>` : ''}
+            ${yrs ? `<span>${yrs}yr req</span><span class="sep">|</span>` : ''}
+            <span>KW: ${kwMatch}%</span>
+          </div>
+        </div>
+        <div class="hc-penalties">${penaltiesHtml}</div>
+        <div class="hc-date">${date}</div>
+        <div class="hc-expand-icon">&#9660;</div>
+      </div>
+      <div class="hc-body">
+        ${summary ? `<div class="hc-section"><div class="hc-section-title"><span class="dot" style="background:var(--purple)"></span>Summary</div><div class="hc-content">${escHtml(summary)}</div></div>` : ''}
+        ${skills ? `<div class="hc-section"><div class="hc-section-title"><span class="dot" style="background:var(--cyan)"></span>Skills</div><div class="hc-skills">${skills.split(/[,|]/).map(s=>s.trim()).filter(Boolean).map(s=>`<span class="hc-skill">${escHtml(s)}</span>`).join('')}</div></div>` : ''}
+        ${bullets.length > 0 ? `<div class="hc-section"><div class="hc-section-title"><span class="dot" style="background:var(--amber)"></span>Experience Bullets</div><ul class="hc-bullets">${bullets.map(b=>`<li>${escHtml(b)}</li>`).join('')}</ul></div>` : ''}
+        ${keywordsHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Search
+document.getElementById('searchInput').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase().trim();
+  if (!q) {
+    renderHistory(allHistory);
+    return;
+  }
+  const filtered = allHistory.filter(h => {
+    const searchable = [
+      h.job?.title, h.job?.company, h.job?.language,
+      h.resume?.summary, h.resume?.skills,
+      ...(h.resume?.bullets || []),
+      ...(h.keywords?.matched || []),
+      ...(h.keywords?.missing || []),
+    ].filter(Boolean).join(' ').toLowerCase();
+    return searchable.includes(q);
+  });
+  renderHistory(filtered);
+});
+
+loadHistory();
+</script>
+</body>
+</html>

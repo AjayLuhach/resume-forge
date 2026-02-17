@@ -9,6 +9,7 @@
   },
   "scripts": {
     "start": "node index.js",
+    "web": "node server.js",
     "setup": "node scripts/generate-template.js",
     "install-pdf": "sudo apt install -y libreoffice-writer && echo '✅ LibreOffice installed! PDF conversion ready.'",
     "send-emails": "node scripts/send-emails.js",
@@ -30,6 +31,7 @@
     "docx": "^9.0.2",
     "docxtemplater": "^3.50.0",
     "dotenv": "^17.2.3",
+    "express": "^5.2.1",
     "mammoth": "^1.11.0",
     "nodemailer": "^8.0.1",
     "pdf-lib": "^1.17.1",

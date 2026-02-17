@@ -215,7 +215,7 @@ EXTRACTION RULES:
    EXAMPLES OF CORRECT EXTRACTION:
    • JD says "JavaScript frameworks" → extract "JavaScript frameworks" (NOT "React.js" or "Angular")
    • JD says "databases" → extract "databases" (NOT "MongoDB" or "PostgreSQL")
-   • JD says "React.js" → extract "React.js" ✅
+   • JD says "React.js" → extract "React.js" not ReactJS or any othe variation of the tech✅
    • JD says "MongoDB" → extract "MongoDB" ✅
 
    - Extract keywords EXACTLY as written from jobDescription (preserve "Next.js" not "NextJS", "Node.js" not "nodejs")
@@ -789,6 +789,7 @@ export async function tailorResume(jobDescription, resumeData) {
     jdTitle: analysis.jdTitle || null,
     jdCompany: analysis.jdCompany || null,
     contact: analysis.contact,
+    atsScore: score,
   };
 }
 

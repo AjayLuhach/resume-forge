@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Costs | Resume Forge</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #12121a;
+    --surface: rgba(255,255,255,0.03);
+    --border: rgba(255,255,255,0.06);
+    --text: #e4e4e7;
+    --text2: #a1a1aa;
+    --text3: #71717a;
+    --accent: #818cf8;
+    --accent2: #6366f1;
+    --green: #34d399;
+    --green2: #10b981;
+    --amber: #fbbf24;
+    --rose: #fb7185;
+    --cyan: #22d3ee;
+    --purple: #a78bfa;
+    --glow: rgba(99,102,241,0.15);
+    --glow2: rgba(99,102,241,0.08);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(52,211,153,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 50% at 80% 90%, rgba(99,102,241,0.06) 0%, transparent 50%);
+    pointer-events: none; z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none; z-index: 0;
+  }
+
+  .nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 1.5rem;
+  }
+
+  .nav-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    height: 56px;
+  }
+
+  .nav-brand {
+    font-size: 0.95rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #fff, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-decoration: none;
+  }
+
+  .nav-links { display: flex; gap: 0.25rem; }
+
+  .nav-links a {
+    padding: 0.45rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text3);
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--text); background: var(--surface); }
+  .nav-links a.active { color: var(--green); background: rgba(52,211,153,0.08); }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .page-header { margin-bottom: 2rem; }
+
+  .page-header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #fff 0%, var(--green) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.4rem;
+  }
+
+  .page-header p { color: var(--text3); font-size: 0.9rem; }
+
+  /* Hero cost */
+  .hero-cost {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-cost::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--green), var(--cyan), var(--accent));
+  }
+
+  .hero-cost .big-number {
+    font-size: 4rem;
+    font-weight: 900;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--green);
+    line-height: 1;
+  }
+
+  .hero-cost .big-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text3);
+    margin-top: 0.5rem;
+  }
+
+  .hero-cost .sub-costs {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+    margin-top: 1.5rem;
+  }
+
+  .hero-cost .sub-cost {
+    text-align: center;
+  }
+
+  .hero-cost .sub-cost .val {
+    font-size: 1.4rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .hero-cost .sub-cost .lbl {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    margin-top: 0.2rem;
+  }
+
+  /* Stats grid */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.3rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.3;
+  }
+
+  .stat-val {
+    font-size: 1.6rem;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1.1;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    margin-top: 0.3rem;
+  }
+
+  /* Step breakdown */
+  .breakdown-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.8rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .breakdown-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--purple), transparent);
+    opacity: 0.3;
+  }
+
+  .breakdown-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    margin-bottom: 1.5rem;
+  }
+
+  .step-bars { display: flex; flex-direction: column; gap: 1.2rem; }
+
+  .step-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .step-bar-label {
+    width: 80px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    flex-shrink: 0;
+  }
+
+  .step-bar-track {
+    flex: 1;
+    height: 28px;
+    background: var(--surface);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .step-bar-fill {
+    height: 100%;
+    border-radius: 8px;
+    transition: width 1s ease;
+    display: flex;
+    align-items: center;
+    padding-left: 0.8rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    color: rgba(255,255,255,0.9);
+    min-width: fit-content;
+  }
+
+  .step-bar-stats {
+    display: flex;
+    gap: 1.5rem;
+    width: 280px;
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    color: var(--text3);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  @media (max-width: 768px) {
+    .step-bar-stats { display: none; }
+    .step-bar-label { width: 60px; font-size: 0.7rem; }
+  }
+
+  /* Recent calls table */
+  .table-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .table-card .card-header {
+    padding: 1.2rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+  }
+
+  .calls-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .calls-table th {
+    padding: 0.7rem 1rem;
+    text-align: left;
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .calls-table td {
+    padding: 0.65rem 1rem;
+    font-size: 0.8rem;
+    border-bottom: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text2);
+  }
+
+  .calls-table tr:last-child td { border-bottom: none; }
+
+  .calls-table tr:hover td { background: var(--surface); }
+
+  .step-tag {
+    padding: 0.18rem 0.5rem;
+    border-radius: 5px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+
+  .step-tag.analysis { background: rgba(129,140,248,0.12); color: var(--accent); }
+  .step-tag.rewrite { background: rgba(167,139,250,0.12); color: var(--purple); }
+  .step-tag.scoring { background: rgba(34,211,238,0.12); color: var(--cyan); }
+
+  /* Chart container */
+  .chart-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .chart-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    opacity: 0.3;
+  }
+
+  .chart-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    margin-bottom: 1rem;
+  }
+
+  .mini-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 100px;
+    padding-top: 1rem;
+  }
+
+  .chart-bar {
+    flex: 1;
+    min-width: 4px;
+    border-radius: 3px 3px 0 0;
+    transition: height 0.5s ease;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .chart-bar:hover { opacity: 0.8; }
+
+  .chart-bar .tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.65rem;
+    white-space: nowrap;
+    z-index: 10;
+    color: var(--text2);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .chart-bar:hover .tooltip { display: block; }
+
+  .chart-legend {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 0.8rem;
+    justify-content: center;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.68rem;
+    color: var(--text3);
+  }
+
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="/">Resume Forge</a>
+    <div class="nav-links">
+      <a href="/">Generate</a>
+      <a href="/contacts.html">Contacts</a>
+      <a href="/costs.html" class="active">Costs</a>
+      <a href="/history.html">History</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>API Costs & Usage</h1>
+    <p>Bedrock Claude Haiku 4.5 token usage and cost tracking</p>
+  </div>
+
+  <div id="heroSection"></div>
+  <div id="statsSection"></div>
+  <div id="chartSection"></div>
+  <div id="breakdownSection"></div>
+  <div id="tableSection"></div>
+</div>
+
+<script>
+async function loadCosts() {
+  try {
+    const res = await fetch('/api/costs');
+    const data = await res.json();
+    if (!data.summary) {
+      document.getElementById('heroSection').innerHTML = '<div style="text-align:center;padding:4rem;color:var(--text3)"><p>No cost data available yet. Generate some resumes first!</p></div>';
+      return;
+    }
+    render(data);
+  } catch {
+    document.getElementById('heroSection').innerHTML = '<div style="text-align:center;padding:4rem;color:var(--rose)"><p>Failed to load cost data</p></div>';
+  }
+}
+
+function render(data) {
+  const s = data.summary;
+  const INR_RATE = 83.5;
+  const totalINR = s.totalCost;
+  const totalUSD = totalINR / INR_RATE;
+  const avgCostPerCall = totalINR / (s.totalCalls || 1);
+
+  // Hero
+  document.getElementById('heroSection').innerHTML = `
+    <div class="hero-cost">
+      <div class="big-number">\u20B9${totalINR.toFixed(2)}</div>
+      <div class="big-label">Total Spend</div>
+      <div class="sub-costs">
+        <div class="sub-cost"><div class="val" style="color:var(--cyan)">$${totalUSD.toFixed(4)}</div><div class="lbl">USD Equivalent</div></div>
+        <div class="sub-cost"><div class="val" style="color:var(--amber)">${s.totalCalls}</div><div class="lbl">API Calls</div></div>
+        <div class="sub-cost"><div class="val" style="color:var(--purple)">\u20B9${avgCostPerCall.toFixed(2)}</div><div class="lbl">Avg / Call</div></div>
+      </div>
+    </div>`;
+
+  // Stats
+  const totalTokens = s.totalInputTokens + s.totalOutputTokens;
+  document.getElementById('statsSection').innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-val" style="color:var(--accent)">${(s.totalInputTokens/1000).toFixed(0)}K</div><div class="stat-label">Input Tokens</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--purple)">${(s.totalOutputTokens/1000).toFixed(0)}K</div><div class="stat-label">Output Tokens</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--cyan)">${(totalTokens/1000).toFixed(0)}K</div><div class="stat-label">Total Tokens</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--green)">\u20B9${(totalINR / (totalTokens/1000)).toFixed(2)}</div><div class="stat-label">Cost / 1K Tokens</div></div>
+    </div>`;
+
+  // Chart - recent calls
+  const calls = (data.recentCalls || []).slice().reverse();
+  if (calls.length > 0) {
+    const maxCost = Math.max(...calls.map(c => c.cost));
+    const bars = calls.map((c, i) => {
+      const h = Math.max(4, (c.cost / maxCost) * 90);
+      const color = c.step === 'analysis' ? 'var(--accent)' : c.step === 'rewrite' ? 'var(--purple)' : 'var(--cyan)';
+      const time = new Date(c.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      return `<div class="chart-bar" style="height:${h}px;background:${color}"><div class="tooltip">${c.step} \u20B9${c.cost.toFixed(2)} ${time}</div></div>`;
+    }).join('');
+
+    document.getElementById('chartSection').innerHTML = `
+      <div class="chart-card">
+        <div class="chart-title">Recent API Calls (Cost per Call)</div>
+        <div class="mini-chart">${bars}</div>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>Analysis</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div>Rewrite</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--cyan)"></div>Scoring</div>
+        </div>
+      </div>`;
+  }
+
+  // Step breakdown bars
+  const steps = data.byStep || {};
+  const maxStepCost = Math.max(...Object.values(steps).map(s => s.cost || 0));
+  const stepColors = { analysis: 'var(--accent)', rewrite: 'var(--purple)', scoring: 'var(--cyan)' };
+
+  let barsHtml = '';
+  for (const [name, step] of Object.entries(steps)) {
+    const pct = maxStepCost > 0 ? ((step.cost / maxStepCost) * 100) : 0;
+    barsHtml += `
+      <div class="step-bar-row">
+        <div class="step-bar-label" style="color:${stepColors[name] || 'var(--text2)'}">${name}</div>
+        <div class="step-bar-track">
+          <div class="step-bar-fill" style="width:${pct}%;background:${stepColors[name] || 'var(--accent)'}">
+            \u20B9${step.cost.toFixed(2)}
+          </div>
+        </div>
+        <div class="step-bar-stats">
+          <span>${step.calls} calls</span>
+          <span>${((step.inputTokens + step.outputTokens)/1000).toFixed(0)}K tok</span>
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('breakdownSection').innerHTML = `
+    <div class="breakdown-card">
+      <div class="breakdown-title">Cost by Pipeline Step</div>
+      <div class="step-bars">${barsHtml}</div>
+    </div>`;
+
+  // Recent calls table
+  const rows = calls.slice(-30).reverse().map(c => {
+    const time = new Date(c.timestamp).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    return `<tr>
+      <td>${time}</td>
+      <td><span class="step-tag ${c.step}">${c.step}</span></td>
+      <td>${c.inputTokens.toLocaleString()}</td>
+      <td>${c.outputTokens.toLocaleString()}</td>
+      <td style="color:var(--green)">\u20B9${c.cost.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('tableSection').innerHTML = `
+    <div class="table-card">
+      <div class="card-header">Recent API Calls</div>
+      <table class="calls-table">
+        <thead><tr><th>Time</th><th>Step</th><th>Input</th><th>Output</th><th>Cost</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+loadCosts();
+</script>
+</body>
+</html>
