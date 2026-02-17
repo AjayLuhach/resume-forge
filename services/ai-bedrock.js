@@ -105,17 +105,19 @@ CANDIDATE INFO:
 
 KEYWORD ANALYSIS RULES (CRITICAL):
 - 🔍 ALWAYS check the full resume JSON (skills arrays + projects(personal and under experience ones)) FIRST before categorizing
-- exact = candidate DEFINITELY has this (in skills OR used in actual projects - match flexibly for same skills : "React.js" = "React") but not java = javascript etc 
-- claim = ONLY naming variations OR direct sub-concepts (e.g., has "Next.js" → claim "SSR")
+- exact = candidate DEFINITELY has this (skills OR actual projects). Allow safe naming variants (e.g., "React" == "React.js", "Node" == "Node.js") but not different tech (Java ≠ JavaScript)
+- claim = ONLY when JD uses a generic category and candidate has a specific implementation (e.g., JD says "databases" and candidate has "MongoDB")
 - we have notClaim element in our json of core skills that should never be claimed
 - no = different tech in same category (MongoDB ≠ Cassandra, WebSockets ≠ Kafka, Express.js ≠ Sequelize)
-- CRITICAL: Different databases, ORMs, message queues, frameworks = CANNOT claim (e.g., MongoDB ≠ Cassandra) 
+- CRITICAL: Different databases, ORMs, message queues, frameworks = CANNOT claim (e.g., MongoDB ≠ Cassandra)
 
 REWRITING RULES:
 - Only use skills and core technologies the candidate actually knows
 - Don't add skills the candidate doesn't have
 - Keep the candidate's core tech stack consistent
 - Be honest about skill gaps - don't fabricate experience
+- Only use skills explicitly present in resume skills
+- Every skill you add must be explainable from the provided resume context
 
 SCORING RULES:
 - Check if JD's primary language/framework matches candidate's skills
@@ -231,13 +233,8 @@ EXTRACTION RULES:
      • Example: JD says "React.js" AND candidate has "React" → exact match ✅
      • Example: JD says "JavaScript frameworks" AND candidate has "React" → DO NOT mark as exact, this is a claim ⚠️
 
-   - claim: Use this for TWO cases ONLY:
-
-     CASE 1: Naming variations (same tech, different name)
-     ✅ JD says "React.js", candidate has "React" → claim "React.js"
-     ✅ JD says "Node", candidate has "Node.js" → claim "Node"
-
-     CASE 2: Generic term in JD, candidate has specific implementation
+   - claim: Use this for ONE case ONLY:
+     Generic term in JD, candidate has specific implementation
      ✅ JD says "JavaScript frameworks", candidate has "React, Next.js" → claim "JavaScript frameworks"
      ✅ JD says "databases", candidate has "MongoDB, PostgreSQL" → claim "databases"
 
@@ -270,6 +267,7 @@ EXTRACTION RULES:
 Return ONLY valid JSON:
 {
   "exact": ["skills candidate has"],
+  "coreSkills": ["4-5 skills candidate has related to his core stack ,but are not asked in jd,like in case of a backend jd reactjs will not be asked,but if its candidate core skill should be returned for next step context"],
   "claim": ["close variations/related concepts"],
   "no": ["skills candidate lacks"],
   "phrases": ["key JD phrases"],
@@ -325,16 +323,18 @@ KEYWORDS TO USE (from Step 1 analysis - use EXACT formatting):
 ✅ EXACT MATCH: ${keywords.slice(0, 30).join(", ")}
 🚫 DO NOT USE: ${(analysis.no || []).slice(0, 15).join(", ")}
 
-CRITICAL: Use keywords EXACTLY as listed above (preserve "Next.js" not "NextJS", "Node.js" not "nodejs", etc.)
+CRITICAL:
+- Use keywords EXACTLY as listed above ,can capitalize first letter(preserve "Next.js" not "NextJS", "Node.js" not "nodejs", etc.)
 
 JOB TITLE: ${jdTitle}
 
 TITLE GENERATION (CRITICAL FOR ATS RANKING):
-- Use EXACTLY this title: "${jdTitle}"
-- The title MUST be identical to the JD title for ATS matching
+- Use EXACTLY this title if it is truthful for the candidate's stack: "${jdTitle}"
+- If it would be misleading, use the closest truthful title that still contains the core role words
 
 REWRITING APPROACH (CRITICAL):
 1. Professional Summary:
+   - Use the chosen title (exact or closest truthful) somewhere in summary for ATS
    - Use the original summary provided above for some context
    - INJECT JD keywords naturally and extend or contract summary based on need 
    - Length: 250-350 chars
@@ -357,13 +357,14 @@ CONTENT RULES:
 - Use keywords from "EXACT MATCH" list (already extracted by Step 1)
 - We have very long descriptions of projects and experience for context to mold, shorten and use them for better rewriting 
 - Weave in these JD phrases naturally: ${phrases.join("; ")}
+- Avoid duplicates/aliases in skills (pick one from EXACT MATCH keywords form)
 
 Return ONLY valid JSON (no markdown):
 {
   "title": "professional title matching JD (max 60 chars)",
   "sum": "professional summary 250-350 chars",
   "bul": ["5 experience bullets, 120-180 chars each - AT LEAST 2 must mention work projects by name"],
-  "skl": "comma-separated skills matching JD",
+  "skl": "comma-separated skills matching JD and are from EXACT MATCH or CORE user skills,all skills should have captial casing ",
   ${personalProjects
     .map((projectName) => {
       const key = projectName.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
