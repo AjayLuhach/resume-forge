@@ -258,6 +258,8 @@ EXTRACTION RULES:
    - niceToHave: Optional skills
    - phrases: 3-5 SHORT action phrases
    - contact: Extract ALL contact info + application instructions (email, phone, any relevant link (LinkedIn/Twitter/portfolio/website), recruiter name, subject line requirements, any special instructions)
+   - jobType: One of "Full-time", "Contract", "Internship", "Part-time", "Freelance" — infer from JD context. Default to "Full-time" if unclear.
+   - salary: Salary/compensation mentioned in JD as-is (e.g., "80k-120k USD", "15-25 LPA", "50/hr") converted to LPA for INR or null if not mentioned.
 
 4. RESUME CONTEXT (for Step 2 rewrite - extract from candidate's full resume JSON):
    - candidateTech: Candidate's primary tech stack (e.g., "Node.js/React.js/MongoDB")
@@ -281,6 +283,8 @@ Return ONLY valid JSON:
   "candidateTech": "primary tech stack from resume",
   "relevantProjects": [{"name": "project name", "tech": ["tech1", "tech2"]}],
   "personalProjects": ["project1", "project2"],
+  "jobType": "Full-time|Contract|Internship|Part-time|Freelance",
+  "salary": "salary string or null",
   "contact": {
     "name": "recruiter/contact name or null",
     "email": "email or null",
@@ -508,6 +512,8 @@ function expandAnalysisResponse(abbreviated) {
     jdCompany: abbreviated.jdCompany || null,
     requiredSkills: abbreviated.requiredSkills || [],
     niceToHave: abbreviated.niceToHave || [],
+    jobType: abbreviated.jobType || "Full-time",
+    salary: abbreviated.salary || null,
     contact: abbreviated.contact || {
       name: null,
       email: null,
@@ -789,6 +795,8 @@ export async function tailorResume(jobDescription, resumeData) {
     ...rewritten,
     jdTitle: analysis.jdTitle || null,
     jdCompany: analysis.jdCompany || null,
+    jobType: analysis.jobType || "Full-time",
+    salary: analysis.salary || null,
     contact: analysis.contact,
     atsScore: score,
   };

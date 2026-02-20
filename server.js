@@ -164,6 +164,8 @@ app.post('/api/generate', async (req, res) => {
       bullets: aiResponse.bullets,
       personalProjects,
       atsScore: aiResponse.atsScore || null,
+      jobType: aiResponse.jobType || 'Full-time',
+      salary: aiResponse.salary || null,
       email: emailData,
       linkedInDM,
       contact: aiResponse.contact || null,

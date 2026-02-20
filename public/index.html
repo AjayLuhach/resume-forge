@@ -892,6 +892,16 @@
         </div>
       </div>
       <div class="metrics-row" id="metricsRow"></div>
+      <div class="metrics-row" id="jobInfoRow" style="margin-top:10px;justify-content:center;gap:24px;display:none;">
+        <div class="metric">
+          <div class="val" id="jobTypeVal">--</div>
+          <div class="lbl">Job Type</div>
+        </div>
+        <div class="metric">
+          <div class="val" id="salaryVal">--</div>
+          <div class="lbl">Salary</div>
+        </div>
+      </div>
     </div>
 
     <!-- Resume content -->
@@ -1169,6 +1179,17 @@ function renderResults(data) {
   } else {
     document.getElementById('scoreCard').style.display = 'none';
   }
+
+  // Job Type & Salary
+  const jobInfoRow = document.getElementById('jobInfoRow');
+  const jobType = data.jobType || 'Full-time';
+  const salary = data.salary || null;
+  const isWarningType = ['Contract', 'Internship', 'Part-time', 'Freelance'].includes(jobType);
+  document.getElementById('jobTypeVal').textContent = jobType;
+  document.getElementById('jobTypeVal').style.color = isWarningType ? 'var(--rose)' : 'var(--green)';
+  document.getElementById('salaryVal').textContent = salary || 'Not mentioned';
+  document.getElementById('salaryVal').style.color = salary ? '' : 'var(--muted)';
+  jobInfoRow.style.display = 'flex';
 
   // Resume content
   document.getElementById('resTitle').textContent = data.title || '--';
