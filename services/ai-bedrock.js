@@ -340,20 +340,22 @@ REWRITING APPROACH (CRITICAL):
 1. Professional Summary:
    - Use the chosen title (exact or closest truthful) somewhere in summary for ATS
    - Use the original summary provided above for some context
-   - INJECT JD keywords naturally and extend or contract summary based on need 
+   - INJECT JD keywords naturally and extend or contract summary based on need
+   - Weave in 1-2 key phrases from the JD phrases list naturally
    - Length: 250-350 chars
 
 2. Experience Bullets:
    - Write 5 experience bullets (120-180 chars each)
-   - AT LEAST 2 bullets at different places MUST reference specific WORK PROJECTS BY NAME, do not included anything about personal projects in bullets here  
+   - AT LEAST 2 bullets at different places MUST reference specific WORK PROJECTS BY NAME, do not included anything about personal projects in bullets here
    - Use  accomplishments and impact from original project descriptions or create simples ones related to them that are naturally done by devs but not written to keep the descriptions short
    - INJECT JD keywords naturally while maintaining technical depth
+   - USE key phrases from JD phrases list as action/context in bullets (aim for 2-3 phrases spread across bullets)
    - Example: "Built GetStatus platform using React, Node.js, MongoDB with real-time WebSocket features and CloudWatch monitoring"
 
 3. Personal Projects:
    - REWRITE ${personalProjects.length} personal project descriptions
    - USE the original descriptions as context - don't generate from scratch to loose relatibility
-   - INJECT JD keywords naturally into rewritten description 
+   - INJECT JD keywords AND remaining key phrases from JD phrases list naturally into rewritten descriptions
    - KEEP core project functionality and technical details
    - Length: 130-250 chars per project
 
