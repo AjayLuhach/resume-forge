@@ -14,7 +14,8 @@ import { validateJobDescription } from './services/clipboard.js';
 import { generateDocx } from './services/document.js';
 import { convertToPdf, cleanupDocx, checkLibreOffice } from './services/converter.js';
 import { generateEmail, generateLinkedInDM } from './services/email-generator.js';
-import { saveLinkedInDM, saveEmailData } from './services/contact-logger.js';
+import { saveLinkedInDM, saveEmailData, getAllEmailContacts, updateEmailStatus, getUnsentEmails, markEmailAsSent, saveResumeForContact } from './services/contact-logger.js';
+import { sendEmail, verifyConnection } from './services/email-sender.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -143,6 +144,9 @@ app.post('/api/generate', async (req, res) => {
       sendEvent(res, 'step', { step: 6, label: 'PDF skipped (no LibreOffice)', done: true });
     }
 
+    // Save per-job resume copy
+    saveResumeForContact(outputPath, aiResponse.jdTitle, aiResponse.jdCompany);
+
     // Build personal projects data
     const personalProjects = (resumeData.projects || []).map(project => {
       const key = project.name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
@@ -197,6 +201,65 @@ function readLogFile(filename) {
 
 app.get('/api/contacts', (req, res) => {
   res.json(readLogFile('contacts.json') || []);
+});
+
+// Email dashboard endpoints
+app.get('/api/emails', (req, res) => {
+  res.json(getAllEmailContacts());
+});
+
+app.post('/api/emails/approve', (req, res) => {
+  const { index } = req.body;
+  if (typeof index !== 'number') return res.status(400).json({ error: 'index required' });
+  const ok = updateEmailStatus(index, 'approved');
+  res.json({ ok });
+});
+
+app.post('/api/emails/reject', (req, res) => {
+  const { index } = req.body;
+  if (typeof index !== 'number') return res.status(400).json({ error: 'index required' });
+  const ok = updateEmailStatus(index, 'rejected');
+  res.json({ ok });
+});
+
+app.post('/api/emails/reset', (req, res) => {
+  const { index } = req.body;
+  if (typeof index !== 'number') return res.status(400).json({ error: 'index required' });
+  const ok = updateEmailStatus(index, 'drafted');
+  res.json({ ok });
+});
+
+app.post('/api/emails/send', async (req, res) => {
+  const unsent = getUnsentEmails();
+  if (unsent.length === 0) return res.json({ sent: 0, failed: 0, message: 'No approved emails to send' });
+
+  const connected = await verifyConnection();
+  if (!connected) return res.status(500).json({ error: 'SMTP connection failed' });
+
+  const results = { sent: 0, failed: 0, errors: [] };
+
+  for (let i = 0; i < unsent.length; i++) {
+    const contact = unsent[i];
+    let emailData;
+    if (contact.emailData?.subject && contact.emailData?.body) {
+      emailData = { to: contact.to, subject: contact.emailData.subject, body: contact.emailData.body };
+    } else {
+      emailData = {
+        to: contact.to,
+        subject: `Application for ${contact.jobTitle || 'the open position'}${contact.jobCompany ? ` at ${contact.jobCompany}` : ''}`,
+        body: `Dear ${contact.contactName || 'Hiring Manager'},\n\nI am writing to express my interest in the ${contact.jobTitle || 'open position'}${contact.jobCompany ? ` at ${contact.jobCompany}` : ''}. Please find my resume attached.\n\nBest regards`,
+      };
+    }
+
+    if (contact.resumePath) emailData.resumePath = contact.resumePath;
+
+    const result = await sendEmail(emailData, true);
+    if (result.success) { results.sent++; } else { results.failed++; results.errors.push({ to: contact.to, error: result.error }); }
+
+    if (i < unsent.length - 1) await new Promise(r => setTimeout(r, 1200));
+  }
+
+  res.json(results);
 });
 
 app.get('/api/costs', (req, res) => {

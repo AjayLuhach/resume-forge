@@ -34,6 +34,7 @@ import {
   logContactDetails,
   saveLinkedInDM,
   saveEmailData,
+  saveResumeForContact,
 } from "../services/contact-logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -253,6 +254,9 @@ async function main() {
   } else {
     console.log("📄 LibreOffice not found - keeping DOCX output");
   }
+
+  // ── Save per-job resume copy ──
+  saveResumeForContact(outputPath, analysis.jdTitle, analysis.jdCompany);
 
   // ── Summary output as JSON for Claude Code to read ──
   const result = {

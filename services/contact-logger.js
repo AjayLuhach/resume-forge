@@ -37,6 +37,8 @@ export function logContactDetails(contact, jobInfo) {
     }
   }
 
+  const hasEmail = !!contact.email;
+
   const entry = {
     date: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
     job: {
@@ -46,6 +48,8 @@ export function logContactDetails(contact, jobInfo) {
     contacts: [],
     // Additional context (subject line, instructions, etc.)
     description: contact.instructions || null,
+    // Email workflow status: drafted → approved → sent (or rejected)
+    status: hasEmail ? "drafted" : "no_email",
     // Email tracking
     emailSent: false,
     emailSentDate: null,
@@ -111,6 +115,7 @@ export function markEmailAsSent(email) {
       if (emailContact && !entry.emailSent) {
         entry.emailSent = true;
         entry.emailSentDate = new Date().toISOString().split('T')[0];
+        entry.status = "sent";
         found = true;
         break; // Only mark the first unsent occurrence
       }
@@ -164,8 +169,8 @@ export function checkPreviouslySent(email) {
 }
 
 /**
- * Get all unsent email contacts from the log
- * Includes saved email data (subject/body) if available
+ * Get approved, unsent email contacts from the log
+ * Only returns contacts with status === "approved"
  * @returns {Array} Array of email objects with job info and email template
  */
 export function getUnsentEmails() {
@@ -177,7 +182,7 @@ export function getUnsentEmails() {
     const contacts = JSON.parse(fs.readFileSync(CONTACT_LOG, "utf-8"));
 
     return contacts
-      .filter(entry => !entry.emailSent)
+      .filter(entry => !entry.emailSent && entry.status === "approved")
       .map(entry => {
         const emailContact = entry.contacts.find(c => c.type === 'email');
         if (!emailContact) return null;
@@ -189,14 +194,88 @@ export function getUnsentEmails() {
           jobCompany: entry.job.company,
           description: entry.description,
           date: entry.date,
-          // Include saved email template if available
           emailData: entry.emailData || null,
+          resumePath: entry.resumePath || null,
         };
       })
-      .filter(Boolean); // Remove null entries
+      .filter(Boolean);
   } catch (e) {
     console.error('Error reading unsent emails:', e.message);
     return [];
+  }
+}
+
+/**
+ * Get all contacts with email data for dashboard display
+ * Migrates legacy entries (no status field) to "drafted"
+ * @returns {Array} Array of contact entries with index
+ */
+export function getAllEmailContacts() {
+  if (!fs.existsSync(CONTACT_LOG)) {
+    return [];
+  }
+
+  try {
+    const contacts = JSON.parse(fs.readFileSync(CONTACT_LOG, "utf-8"));
+    let migrated = false;
+
+    const results = contacts
+      .map((entry, index) => {
+        const emailContact = entry.contacts.find(c => c.type === 'email');
+        if (!emailContact && !entry.emailData) return null;
+
+        // Migrate legacy entries without status
+        if (!entry.status) {
+          if (entry.emailSent) {
+            entry.status = "sent";
+          } else if (entry.emailData) {
+            entry.status = "drafted";
+          } else {
+            entry.status = "no_email";
+          }
+          migrated = true;
+        }
+
+        return { ...entry, _index: index };
+      })
+      .filter(Boolean);
+
+    if (migrated) {
+      fs.writeFileSync(CONTACT_LOG, JSON.stringify(contacts, null, 2));
+    }
+
+    return results;
+  } catch (e) {
+    console.error('Error reading email contacts:', e.message);
+    return [];
+  }
+}
+
+/**
+ * Update email status by index
+ * @param {number} index - Contact index in the array
+ * @param {string} status - New status (approved/rejected/drafted)
+ * @returns {boolean} True if updated
+ */
+export function updateEmailStatus(index, status) {
+  const validStatuses = ["drafted", "approved", "rejected"];
+  if (!validStatuses.includes(status)) return false;
+
+  if (!fs.existsSync(CONTACT_LOG)) return false;
+
+  try {
+    const contacts = JSON.parse(fs.readFileSync(CONTACT_LOG, "utf-8"));
+    if (index < 0 || index >= contacts.length) return false;
+
+    const entry = contacts[index];
+    if (entry.emailSent) return false; // Can't change status of sent emails
+
+    entry.status = status;
+    fs.writeFileSync(CONTACT_LOG, JSON.stringify(contacts, null, 2));
+    return true;
+  } catch (e) {
+    console.error('Error updating email status:', e.message);
+    return false;
   }
 }
 
@@ -285,6 +364,9 @@ export function saveEmailData(email, subject, body) {
           body,
           generatedAt: new Date().toISOString()
         };
+        if (!entry.status || entry.status === "no_email") {
+          entry.status = "drafted";
+        }
         fs.writeFileSync(CONTACT_LOG, JSON.stringify(contacts, null, 2));
         console.log(`💾 Email template saved to logs/contacts.json`);
         return true;
@@ -298,6 +380,51 @@ export function saveEmailData(email, subject, body) {
   }
 }
 
+/**
+ * Copy tailored resume to logs/resumes/ and save path to the most recent contact entry
+ * @param {string} sourcePath - Path to the generated resume PDF
+ * @param {string} jobTitle - Job title for filename
+ * @param {string} company - Company name for filename
+ * @returns {string|null} Path to the copied resume, or null on failure
+ */
+export function saveResumeForContact(sourcePath, jobTitle, company) {
+  if (!sourcePath || !fs.existsSync(sourcePath)) {
+    console.warn(`⚠️  Resume not found at: ${sourcePath}`);
+    return null;
+  }
+
+  const resumeDir = path.join(LOG_DIR, "resumes");
+  if (!fs.existsSync(resumeDir)) {
+    fs.mkdirSync(resumeDir, { recursive: true });
+  }
+
+  // Build filename: YYYY-MM-DD_Company_JobTitle.pdf
+  const date = new Date().toISOString().split("T")[0];
+  const sanitize = (s) => (s || "Unknown").replace(/[<>:"/\\|?*]/g, "").replace(/\s+/g, "-").substring(0, 40);
+  const ext = path.extname(sourcePath) || ".pdf";
+  const filename = `${date}_${sanitize(company)}_${sanitize(jobTitle)}${ext}`;
+  const destPath = path.join(resumeDir, filename);
+
+  try {
+    fs.copyFileSync(sourcePath, destPath);
+    console.log(`💾 Resume saved to logs/resumes/${filename}`);
+
+    // Save path to the most recent contact entry
+    if (fs.existsSync(CONTACT_LOG)) {
+      const contacts = JSON.parse(fs.readFileSync(CONTACT_LOG, "utf-8"));
+      if (contacts.length > 0) {
+        contacts[contacts.length - 1].resumePath = destPath;
+        fs.writeFileSync(CONTACT_LOG, JSON.stringify(contacts, null, 2));
+      }
+    }
+
+    return destPath;
+  } catch (e) {
+    console.error("Error saving resume copy:", e.message);
+    return null;
+  }
+}
+
 export default {
   logContactDetails,
   markEmailAsSent,
@@ -305,4 +432,7 @@ export default {
   checkPreviouslySent,
   saveLinkedInDM,
   saveEmailData,
+  getAllEmailContacts,
+  updateEmailStatus,
+  saveResumeForContact,
 };

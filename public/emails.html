@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email Dashboard — Resume Forge</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #12121a;
+    --bg3: #1a1a2e;
+    --surface: rgba(255,255,255,0.03);
+    --border: rgba(255,255,255,0.06);
+    --text: #e4e4e7;
+    --text2: #a1a1aa;
+    --text3: #71717a;
+    --accent: #818cf8;
+    --accent2: #6366f1;
+    --accent3: #4f46e5;
+    --green: #34d399;
+    --green2: #10b981;
+    --amber: #fbbf24;
+    --rose: #fb7185;
+    --cyan: #22d3ee;
+    --purple: #a78bfa;
+    --glow: rgba(99,102,241,0.15);
+    --glow2: rgba(99,102,241,0.08);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(99,102,241,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 50% at 80% 90%, rgba(168,85,247,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 40% at 50% 50%, rgba(34,211,238,0.04) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0.6rem 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .nav-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .nav-brand {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text);
+    text-decoration: none;
+    letter-spacing: -0.02em;
+  }
+
+  .nav-links { display: flex; gap: 0.25rem; }
+
+  .nav-links a {
+    padding: 0.45rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text3);
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--text); background: var(--surface); }
+  .nav-links a.active { color: var(--accent); background: var(--glow2); }
+
+  .header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .header h1 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 50%, var(--cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.4rem;
+  }
+
+  .header p { color: var(--text3); font-size: 0.9rem; }
+
+  /* Stats bar */
+  .stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .stat {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 20px;
+    text-align: center;
+    min-width: 100px;
+  }
+
+  .stat-val {
+    font-size: 1.6rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+  }
+
+  .stat-val.drafted { color: var(--amber); }
+  .stat-val.approved { color: var(--green); }
+  .stat-val.rejected { color: var(--rose); }
+  .stat-val.sent { color: var(--cyan); }
+  .stat-val.total { color: var(--accent); }
+
+  /* Toolbar */
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .filters {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    flex: 1;
+  }
+
+  .filter-btn {
+    padding: 7px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    color: var(--text3);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .filter-btn:hover { border-color: var(--accent); color: var(--text2); }
+  .filter-btn.active { background: var(--accent3); border-color: var(--accent2); color: #fff; }
+
+  .send-all-btn {
+    padding: 9px 22px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, var(--green2), var(--green));
+    color: #000;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .send-all-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(16,185,129,0.3); }
+  .send-all-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* Cards */
+  .cards { display: flex; flex-direction: column; gap: 12px; }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 22px;
+    transition: border-color 0.15s;
+  }
+
+  .card:hover { border-color: rgba(255,255,255,0.12); }
+
+  .card-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .badge.drafted { background: rgba(251,191,36,0.12); color: var(--amber); }
+  .badge.approved { background: rgba(52,211,153,0.12); color: var(--green); }
+  .badge.rejected { background: rgba(251,113,133,0.12); color: var(--rose); }
+  .badge.sent { background: rgba(34,211,238,0.12); color: var(--cyan); }
+
+  .card-job {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .card-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-company {
+    font-size: 0.82rem;
+    color: var(--text3);
+  }
+
+  .card-date {
+    font-size: 0.75rem;
+    color: var(--text3);
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+  }
+
+  .card-email-info {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+  }
+
+  .card-email-info .label { color: var(--text3); }
+  .card-email-info .value { color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; }
+
+  .card-subject {
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text2);
+    margin-bottom: 6px;
+  }
+
+  .card-body {
+    font-size: 0.82rem;
+    color: var(--text3);
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+
+  .card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .action-btn {
+    padding: 6px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .action-btn.approve {
+    border-color: var(--green2);
+    color: var(--green);
+  }
+  .action-btn.approve:hover { background: rgba(16,185,129,0.12); }
+
+  .action-btn.reject {
+    border-color: var(--rose);
+    color: var(--rose);
+  }
+  .action-btn.reject:hover { background: rgba(251,113,133,0.12); }
+
+  .action-btn.reset {
+    color: var(--text3);
+  }
+  .action-btn.reset:hover { border-color: var(--text3); background: rgba(255,255,255,0.04); }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text3);
+    font-size: 0.95rem;
+  }
+
+  .sending-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+
+  .sending-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 40px;
+    text-align: center;
+  }
+
+  .sending-box h3 { margin-bottom: 8px; }
+  .sending-box p { color: var(--text3); font-size: 0.9rem; }
+
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    z-index: 200;
+    animation: slideIn 0.2s ease-out;
+  }
+
+  .toast.success { background: rgba(16,185,129,0.9); color: #000; }
+  .toast.error { background: rgba(251,113,133,0.9); color: #000; }
+
+  @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="/">Resume Forge</a>
+    <div class="nav-links">
+      <a href="/">Generate</a>
+      <a href="/emails.html" class="active">Emails</a>
+      <a href="/contacts.html">Contacts</a>
+      <a href="/costs.html">Costs</a>
+      <a href="/history.html">History</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="header">
+    <h1>Email Dashboard</h1>
+    <p>Review, approve and send emails to contacts</p>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="toolbar">
+    <div class="filters" id="filters">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="drafted">Drafted</button>
+      <button class="filter-btn" data-filter="approved">Approved</button>
+      <button class="filter-btn" data-filter="rejected">Rejected</button>
+      <button class="filter-btn" data-filter="sent">Sent</button>
+    </div>
+    <button class="send-all-btn" id="sendAllBtn" onclick="sendAll()">Send Approved</button>
+  </div>
+
+  <div class="cards" id="cards"></div>
+</div>
+
+<script>
+let contacts = [];
+let currentFilter = 'all';
+
+async function load() {
+  try {
+    const res = await fetch('/api/emails');
+    contacts = await res.json();
+  } catch (e) {
+    contacts = [];
+  }
+  render();
+}
+
+function render() {
+  renderStats();
+  renderCards();
+  updateSendBtn();
+}
+
+function getCounts() {
+  const counts = { total: contacts.length, drafted: 0, approved: 0, rejected: 0, sent: 0 };
+  contacts.forEach(c => { if (counts[c.status] !== undefined) counts[c.status]++; });
+  return counts;
+}
+
+function renderStats() {
+  const counts = getCounts();
+  const el = document.getElementById('stats');
+
+  // First render: build the DOM
+  if (!el.children.length) {
+    el.innerHTML = [
+      ['total', 'Total'],
+      ['drafted', 'Drafted'],
+      ['approved', 'Approved'],
+      ['rejected', 'Rejected'],
+      ['sent', 'Sent'],
+    ].map(([k, l]) => `
+      <div class="stat">
+        <div class="stat-val ${k}" id="stat-${k}">${counts[k]}</div>
+        <div class="stat-label">${l}</div>
+      </div>
+    `).join('');
+    return;
+  }
+
+  // Subsequent: just update numbers
+  for (const k of ['total', 'drafted', 'approved', 'rejected', 'sent']) {
+    const node = document.getElementById('stat-' + k);
+    if (node) node.textContent = counts[k];
+  }
+}
+
+function renderCards() {
+  const filtered = currentFilter === 'all' ? contacts : contacts.filter(c => c.status === currentFilter);
+  const el = document.getElementById('cards');
+
+  if (filtered.length === 0) {
+    el.innerHTML = '<div class="empty-state">No contacts found</div>';
+    return;
+  }
+
+  el.innerHTML = filtered.map(c => {
+    const emailContact = c.contacts.find(ct => ct.type === 'email');
+    const email = emailContact?.value || 'N/A';
+    const name = emailContact?.name || c.linkedInDM?.contactName || 'Unknown';
+    const subject = c.emailData?.subject || '';
+    const body = c.emailData?.body || '';
+    const status = c.status || 'drafted';
+    const idx = c._index;
+
+    let actions = '';
+    if (status === 'drafted') {
+      actions = `
+        <button class="action-btn approve" onclick="setStatus(${idx},'approved')">Approve</button>
+        <button class="action-btn reject" onclick="setStatus(${idx},'rejected')">Reject</button>`;
+    } else if (status === 'approved') {
+      actions = `
+        <button class="action-btn reset" onclick="setStatus(${idx},'drafted')">Reset to Draft</button>
+        <button class="action-btn reject" onclick="setStatus(${idx},'rejected')">Reject</button>`;
+    } else if (status === 'rejected') {
+      actions = `<button class="action-btn reset" onclick="setStatus(${idx},'drafted')">Reset to Draft</button>`;
+    }
+
+    return `
+      <div class="card" data-idx="${idx}">
+        <div class="card-top">
+          <span class="badge ${status}" data-badge="${idx}">${status}</span>
+          <div class="card-job">
+            <div class="card-title">${esc(c.job?.title || 'Untitled')}</div>
+            <div class="card-company">${esc(c.job?.company || 'Unknown Company')}</div>
+          </div>
+          <div class="card-date">${c.date || ''}</div>
+        </div>
+        <div class="card-email-info">
+          <span><span class="label">To: </span><span class="value">${esc(email)}</span></span>
+          <span><span class="label">Contact: </span>${esc(name)}</span>
+        </div>
+        ${subject ? `<div class="card-subject">${esc(subject)}</div>` : ''}
+        ${body ? `<div class="card-body">${esc(body)}</div>` : ''}
+        ${actions ? `<div class="card-actions" data-actions="${idx}">${actions}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function updateSendBtn() {
+  const approvedCount = contacts.filter(c => c.status === 'approved').length;
+  const btn = document.getElementById('sendAllBtn');
+  btn.textContent = approvedCount > 0 ? `Send Approved (${approvedCount})` : 'Send Approved';
+  btn.disabled = approvedCount === 0;
+}
+
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function actionsHTML(idx, status) {
+  if (status === 'drafted') return `
+    <button class="action-btn approve" onclick="setStatus(${idx},'approved')">Approve</button>
+    <button class="action-btn reject" onclick="setStatus(${idx},'rejected')">Reject</button>`;
+  if (status === 'approved') return `
+    <button class="action-btn reset" onclick="setStatus(${idx},'drafted')">Reset to Draft</button>
+    <button class="action-btn reject" onclick="setStatus(${idx},'rejected')">Reject</button>`;
+  if (status === 'rejected') return `
+    <button class="action-btn reset" onclick="setStatus(${idx},'drafted')">Reset to Draft</button>`;
+  return '';
+}
+
+function applyStatusToDOM(idx, status) {
+  const badge = document.querySelector(`[data-badge="${idx}"]`);
+  if (badge) { badge.textContent = status; badge.className = `badge ${status}`; }
+
+  const actionsEl = document.querySelector(`[data-actions="${idx}"]`);
+  if (actionsEl) actionsEl.innerHTML = actionsHTML(idx, status);
+
+  renderStats();
+  updateSendBtn();
+
+  if (currentFilter !== 'all' && status !== currentFilter) {
+    const card = document.querySelector(`[data-idx="${idx}"]`);
+    if (card) card.style.display = 'none';
+  }
+}
+
+function setStatus(idx, newStatus) {
+  const c = contacts.find(c => c._index === idx);
+  if (!c) return;
+
+  const oldStatus = c.status;
+  c.status = newStatus;
+  applyStatusToDOM(idx, newStatus);
+
+  const endpoint = newStatus === 'approved' ? 'approve' : newStatus === 'rejected' ? 'reject' : 'reset';
+  fetch(`/api/emails/${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ index: idx }),
+  }).then(r => r.json()).then(data => {
+    if (!data.ok) {
+      c.status = oldStatus;
+      applyStatusToDOM(idx, oldStatus);
+      toast('Failed to update', 'error');
+    }
+  }).catch(() => {
+    c.status = oldStatus;
+    applyStatusToDOM(idx, oldStatus);
+    toast('Network error', 'error');
+  });
+
+  const labels = { approved: 'Email approved', rejected: 'Email rejected', drafted: 'Reset to draft' };
+  toast(labels[newStatus], 'success');
+}
+
+async function sendAll() {
+  const approvedCount = contacts.filter(c => c.status === 'approved').length;
+  if (approvedCount === 0) return;
+  if (!confirm(`Send ${approvedCount} approved email(s)?`)) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'sending-overlay';
+  overlay.innerHTML = '<div class="sending-box"><div class="spinner"></div><h3>Sending Emails...</h3><p>Please wait</p></div>';
+  document.body.appendChild(overlay);
+
+  try {
+    const res = await fetch('/api/emails/send', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    const data = await res.json();
+    overlay.remove();
+
+    if (data.error) {
+      toast(data.error, 'error');
+    } else {
+      toast(`Sent: ${data.sent}, Failed: ${data.failed}`, data.failed > 0 ? 'error' : 'success');
+    }
+    await load();
+  } catch (e) {
+    overlay.remove();
+    toast('Send failed: ' + e.message, 'error');
+  }
+}
+
+function toast(msg, type) {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// Filter buttons
+document.getElementById('filters').addEventListener('click', e => {
+  if (!e.target.classList.contains('filter-btn')) return;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  e.target.classList.add('active');
+  currentFilter = e.target.dataset.filter;
+  renderCards();
+});
+
+load();
+</script>
+</body>
+</html>

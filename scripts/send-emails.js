@@ -75,17 +75,19 @@ async function main() {
     process.exit(results.failed > 0 ? 1 : 0);
   }
 
-  // Default: Send all unsent emails from contacts.json
-  console.log("📋 Sending unsent emails from logs/contacts.json\n");
+  // Default: Send only approved emails from contacts.json
+  console.log("📋 Sending approved emails from logs/contacts.json\n");
+  console.log("💡 TIP: Use the dashboard (npm run web → /emails.html) to approve emails first\n");
 
   const unsentEmails = getUnsentEmails();
 
   if (unsentEmails.length === 0) {
-    console.log("✅ No unsent emails found in contacts.json");
+    console.log("✅ No approved unsent emails found in contacts.json");
+    console.log("   Approve emails via the dashboard before sending");
     process.exit(0);
   }
 
-  console.log(`📧 Found ${unsentEmails.length} unsent emails\n`);
+  console.log(`📧 Found ${unsentEmails.length} approved email(s) to send\n`);
 
   // Verify connection first
   const connected = await verifyConnection();
@@ -169,6 +171,11 @@ Best regards,
 ${process.env.FROM_NAME || "Job Applicant"}`;
 
       emailData = { to: contact.to, subject, body };
+    }
+
+    // Attach per-job tailored resume if available
+    if (contact.resumePath) {
+      emailData.resumePath = contact.resumePath;
     }
 
     // Send email

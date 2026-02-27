@@ -90,13 +90,23 @@ export async function sendEmail(emailData, markSent = true) {
   // const actualRecipient = "ajaytest07@yopmail.com";
   const actualRecipient = to;
 
-  // Prepare attachments (master resume)
+  // Prepare attachments — prefer per-job tailored resume, fallback to master
   const attachments = [];
-  if (RESUME_PATH && fs.existsSync(RESUME_PATH)) {
+  const resumePath = emailData.resumePath && fs.existsSync(emailData.resumePath)
+    ? emailData.resumePath
+    : (RESUME_PATH && fs.existsSync(RESUME_PATH) ? RESUME_PATH : null);
+
+  if (resumePath) {
+    // Clean filename for recipient: "Ajay Kumar_Resume.pdf" instead of "2026-02-27_Company_Job.pdf"
+    const ext = path.extname(resumePath) || ".pdf";
+    const cleanName = `${FROM_NAME.replace(/\s+/g, "_")}_Resume${ext}`;
     attachments.push({
-      filename: path.basename(RESUME_PATH),
-      path: RESUME_PATH,
+      filename: cleanName,
+      path: resumePath,
     });
+    if (emailData.resumePath) {
+      console.log(`   📎 Attaching tailored resume: ${path.basename(resumePath)} → ${cleanName}`);
+    }
   } else if (RESUME_PATH) {
     console.warn(`⚠️  Resume not found at: ${RESUME_PATH}`);
     console.warn(`   Email will be sent without attachment`);
