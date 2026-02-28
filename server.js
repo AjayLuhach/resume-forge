@@ -272,6 +272,13 @@ app.get('/api/history', (req, res) => {
 
 const PORT = process.env.PORT || 3456;
 app.listen(PORT, () => {
+  const provider = config.ai.provider;
+  const bedrockModel = config.ai.bedrock.activeModel || 'haiku';
+  const modelLabel = provider === 'bedrock'
+    ? `Bedrock → ${bedrockModel === 'deepseek' ? 'DeepSeek V3.2' : 'Claude Haiku 4.5'}`
+    : 'Gemini';
+
   console.log(`\n  🚀 Resume Forge Web UI`);
-  console.log(`  ➜ http://localhost:${PORT}\n`);
+  console.log(`  ➜ http://localhost:${PORT}`);
+  console.log(`  ⚙ AI Model: ${modelLabel}\n`);
 });

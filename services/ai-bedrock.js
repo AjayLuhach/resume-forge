@@ -1,11 +1,11 @@
 /**
  * AWS Bedrock AI Service - Resume Forgeing
  *
- * STEP 1: ANALYSIS - Claude Haiku 4.5
+ * STEP 1: ANALYSIS - Claude Haiku 4.5 or DeepSeek V3.2
  * - Keyword categorization (exact/claim/miss)
  * - JD requirement extraction
  *
- * STEP 2: REWRITE - Claude Haiku 4.5
+ * STEP 2: REWRITE - Claude Haiku 4.5 or DeepSeek V3.2
  * - Resume content generation
  *
  * STEP 3: SCORING - Deterministic (No AI)
@@ -15,6 +15,7 @@
 import {
   BedrockRuntimeClient,
   InvokeModelCommand,
+  ConverseCommand,
 } from "@aws-sdk/client-bedrock-runtime";
 import fs from "fs";
 import path from "path";
@@ -34,20 +35,27 @@ const LOG_FILE = path.join(LOG_DIR, "keyword_gaps.json");
 // CONFIGURATION
 // ============================================================
 
+const activeModel = config.ai.bedrock.activeModel || "haiku";
+const isDeepSeek = activeModel === "deepseek";
+const modelSource = isDeepSeek
+  ? config.ai.bedrock.deepseekModels
+  : config.ai.bedrock.models;
+
 const BEDROCK_CONFIG = {
   region: config.ai.bedrock.region || process.env.AWS_REGION || "us-east-1",
+  activeModel,
 
-  // Multi-model configuration
+  // Multi-model configuration (resolved from activeModel)
   models: {
     analysis: {
-      modelId: config.ai.bedrock.models.analysis.modelId,
-      maxTokens: config.ai.bedrock.models.analysis.maxTokens,
-      anthropicVersion: "bedrock-2023-05-31", // Claude-specific
+      modelId: modelSource.analysis.modelId,
+      maxTokens: modelSource.analysis.maxTokens,
+      ...(isDeepSeek ? {} : { anthropicVersion: "bedrock-2023-05-31" }),
     },
     rewrite: {
-      modelId: config.ai.bedrock.models.rewrite.modelId,
-      maxTokens: config.ai.bedrock.models.rewrite.maxTokens,
-      anthropicVersion: "bedrock-2023-05-31", // Claude-specific
+      modelId: modelSource.rewrite.modelId,
+      maxTokens: modelSource.rewrite.maxTokens,
+      ...(isDeepSeek ? {} : { anthropicVersion: "bedrock-2023-05-31" }),
     },
   },
 };
@@ -404,11 +412,17 @@ async function invoke(systemPrompt, messages, stepName = "unknown") {
 
   const isClaude = modelConfig.modelId.includes("anthropic");
 
-  if (!isClaude) {
-    throw new Error(`Unsupported model: ${modelConfig.modelId}`);
+  if (isClaude) {
+    return invokeClaudeModel(client, modelConfig, systemPrompt, messages, stepName);
+  } else {
+    return invokeConverseModel(client, modelConfig, systemPrompt, messages, stepName);
   }
+}
 
-  // Claude Anthropic Messages API format
+/**
+ * Invoke Claude model via InvokeModelCommand (Anthropic Messages API)
+ */
+async function invokeClaudeModel(client, modelConfig, systemPrompt, messages, stepName) {
   const payload = {
     anthropic_version: modelConfig.anthropicVersion,
     max_tokens: modelConfig.maxTokens,
@@ -428,15 +442,58 @@ async function invoke(systemPrompt, messages, stepName = "unknown") {
     const response = await client.send(command);
     const result = JSON.parse(Buffer.from(response.body).toString());
 
-    // Log usage if available
     if (result.usage) {
       logApiCall(stepName, result.usage, modelConfig.modelId);
     }
 
-    // Extract response text from Claude format
     return result.content[0].text;
   } catch (error) {
     console.error(`Bedrock API error (${stepName}):`, error.message);
+    throw error;
+  }
+}
+
+/**
+ * Invoke non-Claude models (DeepSeek, etc.) via ConverseCommand
+ * The Converse API is model-agnostic and works across all Bedrock models
+ */
+async function invokeConverseModel(client, modelConfig, systemPrompt, messages, stepName) {
+  // Convert messages to Converse API format
+  const converseMessages = messages.map((msg) => ({
+    role: msg.role,
+    content: [{ text: typeof msg.content === "string" ? msg.content : msg.content }],
+  }));
+
+  const command = new ConverseCommand({
+    modelId: modelConfig.modelId,
+    system: [{ text: systemPrompt }],
+    messages: converseMessages,
+    inferenceConfig: {
+      maxTokens: modelConfig.maxTokens,
+      temperature: 0.1,
+    },
+  });
+
+  try {
+    const response = await client.send(command);
+
+    // Log usage from Converse API response
+    if (response.usage) {
+      logApiCall(stepName, {
+        input_tokens: response.usage.inputTokens,
+        output_tokens: response.usage.outputTokens,
+      }, modelConfig.modelId);
+    }
+
+    // Extract text from Converse API response
+    const outputContent = response.output?.message?.content;
+    if (outputContent && outputContent.length > 0) {
+      return outputContent[0].text;
+    }
+
+    throw new Error("Empty response from Converse API");
+  } catch (error) {
+    console.error(`Bedrock Converse API error (${stepName}):`, error.message);
     throw error;
   }
 }
@@ -726,8 +783,9 @@ export async function tailorResume(jobDescription, resumeData) {
   const systemPrompt = buildSystemPrompt(resumeData);
   const resumeContext = buildResumeContext(resumeData);
 
-  // ========== STEP 1: Analysis (Claude Haiku 4.5) ==========
-  console.log("\n🔍 STEP 1: Analyzing JD keywords...");
+  // ========== STEP 1: Analysis ==========
+  const modelLabel = isDeepSeek ? "DeepSeek V3.2" : "Claude Haiku 4.5";
+  console.log(`\n🔍 STEP 1: Analyzing JD keywords... [${modelLabel}]`);
 
   const analysisUserPrompt = `${resumeContext}\n\n${buildAnalysisPrompt(jobDescription, resumeData)}`;
   const analysisMessages = [
@@ -751,8 +809,8 @@ export async function tailorResume(jobDescription, resumeData) {
     company: analysis.jdCompany,
   });
 
-  // ========== STEP 2: Rewrite (Claude Haiku 4.5) ==========
-  console.log("\n✍️  STEP 2: Rewriting resume...");
+  // ========== STEP 2: Rewrite ==========
+  console.log(`\n✍️  STEP 2: Rewriting resume... [${modelLabel}]`);
 
   // Only pass relevant projects identified by Step 1 (saves tokens)
   const resumeContextForRewrite = buildResumeContextForRewrite(

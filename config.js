@@ -90,6 +90,9 @@ export const config = {
     bedrock: {
       region: process.env.AWS_REGION || 'us-east-1',
 
+      // Which model to use: 'haiku' or 'deepseek'
+      activeModel: process.env.BEDROCK_MODEL || 'haiku',
+
       // Model configuration per step
       models: {
         // Step 1: Analysis - Claude Haiku 4.5
@@ -103,6 +106,18 @@ export const config = {
           maxTokens: 2048,
         },
         // Step 3: Scoring - Deterministic (no AI)
+      },
+
+      // DeepSeek V3.2 model configuration (alternative to Haiku)
+      deepseekModels: {
+        analysis: {
+          modelId: 'deepseek.v3.2',
+          maxTokens: 3072,
+        },
+        rewrite: {
+          modelId: 'deepseek.v3.2',
+          maxTokens: 2048,
+        },
       },
 
       // Legacy config for backward compatibility

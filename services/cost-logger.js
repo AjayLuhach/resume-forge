@@ -5,6 +5,7 @@
  *
  * Supported models (AWS Bedrock pricing):
  * - Claude Haiku 4.5: Input $1.00/1M, Output $5.00/1M
+ * - DeepSeek V3.2: Input $0.80/1M, Output $2.00/1M (update with actual pricing)
  */
 
 import fs from 'fs';
@@ -31,6 +32,11 @@ const MODEL_PRICING_USD = {
   'us.anthropic.claude-haiku-4-5-20251001-v1:0': {
     input: 1.00,
     output: 5.00,
+  },
+  // DeepSeek V3.2 - AWS Bedrock pricing (update with actual values)
+  'deepseek.v3.2': {
+    input: 0.80,
+    output: 2.00,
   },
   // Default fallback
   default: {
