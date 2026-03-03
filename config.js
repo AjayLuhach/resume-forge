@@ -90,42 +90,23 @@ export const config = {
     bedrock: {
       region: process.env.AWS_REGION || 'us-east-1',
 
-      // Which model to use: 'haiku' or 'deepseek'
-      activeModel: process.env.BEDROCK_MODEL || 'haiku',
+      // Set any Bedrock model ID directly, or use a shorthand alias
+      // Aliases: 'haiku', 'deepseek', 'qwen', 'glm'
+      // Or full model ID: 'us.anthropic.claude-haiku-4-5-20251001-v1:0'
+      modelId: process.env.BEDROCK_MODEL || 'haiku',
 
-      // Model configuration per step
-      models: {
-        // Step 1: Analysis - Claude Haiku 4.5
-        analysis: {
-          modelId: 'us.anthropic.claude-haiku-4-5-20251001-v1:0',
-          maxTokens: 3072, // Increased from 2048 to avoid JSON truncation
-        },
-        // Step 2: Rewrite - Claude Haiku 4.5
-        rewrite: {
-          modelId: 'us.anthropic.claude-haiku-4-5-20251001-v1:0',
-          maxTokens: 2048,
-        },
-        // Step 3: Scoring - Deterministic (no AI)
+      // Shorthand aliases → full Bedrock model IDs
+      modelAliases: {
+        haiku: 'us.anthropic.claude-haiku-4-5-20251001-v1:0',
+        deepseek: 'deepseek.v3.2',
+        qwen: 'qwen.qwen3-vl-235b-a22b',
+        glm: 'zai.glm-4.7',
       },
 
-      // DeepSeek V3.2 model configuration (alternative to Haiku)
-      deepseekModels: {
-        analysis: {
-          modelId: 'deepseek.v3.2',
-          maxTokens: 3072,
-        },
-        rewrite: {
-          modelId: 'deepseek.v3.2',
-          maxTokens: 2048,
-        },
-      },
-
-      // Legacy config for backward compatibility
-      modelId: 'us.anthropic.claude-haiku-4-5-20251001-v1:0',
+      // Max tokens per step (applies to all models)
       maxTokens: {
-        analysis: 3072, // Increased from 2048 to avoid JSON truncation
+        analysis: 3072,
         rewrite: 2048,
-        scoring: 0,
       },
     },
 

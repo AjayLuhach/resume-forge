@@ -14,7 +14,6 @@
 
 import {
   BedrockRuntimeClient,
-  InvokeModelCommand,
   ConverseCommand,
 } from "@aws-sdk/client-bedrock-runtime";
 import fs from "fs";
@@ -35,30 +34,25 @@ const LOG_FILE = path.join(LOG_DIR, "keyword_gaps.json");
 // CONFIGURATION
 // ============================================================
 
-const activeModel = config.ai.bedrock.activeModel || "haiku";
-const isDeepSeek = activeModel === "deepseek";
-const modelSource = isDeepSeek
-  ? config.ai.bedrock.deepseekModels
-  : config.ai.bedrock.models;
+// Resolve model ID from alias or use directly
+const rawModelId = config.ai.bedrock.modelId || "haiku";
+const aliases = config.ai.bedrock.modelAliases || {};
+const resolvedModelId = aliases[rawModelId] || rawModelId;
+const modelAlias = aliases[rawModelId] ? rawModelId : null;
 
 const BEDROCK_CONFIG = {
   region: config.ai.bedrock.region || process.env.AWS_REGION || "us-east-1",
-  activeModel,
-
-  // Multi-model configuration (resolved from activeModel)
-  models: {
-    analysis: {
-      modelId: modelSource.analysis.modelId,
-      maxTokens: modelSource.analysis.maxTokens,
-      ...(isDeepSeek ? {} : { anthropicVersion: "bedrock-2023-05-31" }),
-    },
-    rewrite: {
-      modelId: modelSource.rewrite.modelId,
-      maxTokens: modelSource.rewrite.maxTokens,
-      ...(isDeepSeek ? {} : { anthropicVersion: "bedrock-2023-05-31" }),
-    },
-  },
+  modelId: resolvedModelId,
+  modelLabel: modelAlias || resolvedModelId.split(".").pop(),
+  maxTokens: config.ai.bedrock.maxTokens || { analysis: 3072, rewrite: 2048 },
 };
+
+function resolveModel(modelOverride) {
+  if (!modelOverride) return { modelId: BEDROCK_CONFIG.modelId, modelLabel: BEDROCK_CONFIG.modelLabel };
+  const id = aliases[modelOverride] || modelOverride;
+  const label = aliases[modelOverride] ? modelOverride : id.split(".").pop();
+  return { modelId: id, modelLabel: label };
+}
 
 // ============================================================
 // BEDROCK CLIENT
@@ -282,13 +276,13 @@ Return ONLY valid JSON:
   "no": ["skills candidate lacks"],
   "phrases": ["key JD phrases"],
   "miss": ["missing required skills"],
-  "jdLang": "primary language",
+  "jdLang": "primary programming language or null",
   "jdYears": number or null,
   "jdTitle": "job title",
   "jdCompany": "company name or null",
   "requiredSkills": ["top required skills"],
   "niceToHave": ["optional skills"],
-  "candidateTech": "primary tech stack from resume",
+  "candidateTech": "primary tech stack",
   "relevantProjects": [{"name": "project name", "tech": ["tech1", "tech2"]}],
   "personalProjects": ["project1", "project2"],
   "jobType": "Full-time|Contract|Internship|Part-time|Freelance",
@@ -297,8 +291,8 @@ Return ONLY valid JSON:
     "name": "recruiter/contact name or null",
     "email": "email or null",
     "phone": "phone or null",
-    "link": "any relevant link (LinkedIn/Twitter/portfolio/website) or null",
-    "instructions": "subject line requirements, portfolio requirements, or any other application instructions (short text) or null"
+    "link": "relevant link or null",
+    "instructions": "application instructions or null"
   }
 }`;
 }
@@ -341,8 +335,10 @@ CRITICAL:
 JOB TITLE: ${jdTitle}
 
 TITLE GENERATION (CRITICAL FOR ATS RANKING):
-- Use EXACTLY this title if it is truthful for the candidate's stack: "${jdTitle}"
-- If it would be misleading, use the closest truthful title that still contains the core role words
+- Use EXACTLY "${jdTitle}" if truthful.
+- If JD title contains tech the candidate does NOT have, remove ONLY the unsupported tech.
+- NEVER add new technologies.
+- NEVER invent secondary stacks.
 
 REWRITING APPROACH (CRITICAL):
 1. Professional Summary:
@@ -399,77 +395,25 @@ Return ONLY valid JSON (no markdown):
 // ============================================================
 
 /**
- * Invoke Bedrock model with step-specific configuration
- * Supports Claude (Anthropic Messages API format)
+ * Invoke any Bedrock model via the Converse API (model-agnostic)
+ * Works with Claude, DeepSeek, Qwen, GLM, and any future Bedrock model
  */
-async function invoke(systemPrompt, messages, stepName = "unknown") {
+async function invoke(systemPrompt, messages, stepName = "unknown", modelId = null) {
   const client = getBedrockClient();
-  const modelConfig = BEDROCK_CONFIG.models[stepName];
+  const maxTokens = BEDROCK_CONFIG.maxTokens[stepName] || 2048;
+  const useModelId = modelId || BEDROCK_CONFIG.modelId;
 
-  if (!modelConfig) {
-    throw new Error(`Unknown step: ${stepName}. Use 'analysis' or 'rewrite'`);
-  }
-
-  const isClaude = modelConfig.modelId.includes("anthropic");
-
-  if (isClaude) {
-    return invokeClaudeModel(client, modelConfig, systemPrompt, messages, stepName);
-  } else {
-    return invokeConverseModel(client, modelConfig, systemPrompt, messages, stepName);
-  }
-}
-
-/**
- * Invoke Claude model via InvokeModelCommand (Anthropic Messages API)
- */
-async function invokeClaudeModel(client, modelConfig, systemPrompt, messages, stepName) {
-  const payload = {
-    anthropic_version: modelConfig.anthropicVersion,
-    max_tokens: modelConfig.maxTokens,
-    temperature: 0.1,
-    system: systemPrompt,
-    messages,
-  };
-
-  const command = new InvokeModelCommand({
-    modelId: modelConfig.modelId,
-    contentType: "application/json",
-    accept: "application/json",
-    body: JSON.stringify(payload),
-  });
-
-  try {
-    const response = await client.send(command);
-    const result = JSON.parse(Buffer.from(response.body).toString());
-
-    if (result.usage) {
-      logApiCall(stepName, result.usage, modelConfig.modelId);
-    }
-
-    return result.content[0].text;
-  } catch (error) {
-    console.error(`Bedrock API error (${stepName}):`, error.message);
-    throw error;
-  }
-}
-
-/**
- * Invoke non-Claude models (DeepSeek, etc.) via ConverseCommand
- * The Converse API is model-agnostic and works across all Bedrock models
- */
-async function invokeConverseModel(client, modelConfig, systemPrompt, messages, stepName) {
-  // Convert messages to Converse API format
   const converseMessages = messages.map((msg) => ({
     role: msg.role,
     content: [{ text: typeof msg.content === "string" ? msg.content : msg.content }],
   }));
 
   const command = new ConverseCommand({
-    modelId: modelConfig.modelId,
+    modelId: useModelId,
     system: [{ text: systemPrompt }],
     messages: converseMessages,
     inferenceConfig: {
-      maxTokens: modelConfig.maxTokens,
+      maxTokens,
       temperature: 0.1,
     },
   });
@@ -477,15 +421,13 @@ async function invokeConverseModel(client, modelConfig, systemPrompt, messages, 
   try {
     const response = await client.send(command);
 
-    // Log usage from Converse API response
     if (response.usage) {
       logApiCall(stepName, {
         input_tokens: response.usage.inputTokens,
         output_tokens: response.usage.outputTokens,
-      }, modelConfig.modelId);
+      }, useModelId);
     }
 
-    // Extract text from Converse API response
     const outputContent = response.output?.message?.content;
     if (outputContent && outputContent.length > 0) {
       return outputContent[0].text;
@@ -493,7 +435,7 @@ async function invokeConverseModel(client, modelConfig, systemPrompt, messages, 
 
     throw new Error("Empty response from Converse API");
   } catch (error) {
-    console.error(`Bedrock Converse API error (${stepName}):`, error.message);
+    console.error(`Bedrock API error (${stepName}):`, error.message);
     throw error;
   }
 }
@@ -626,7 +568,7 @@ function logKeywordGaps(jobTitle, analysis) {
 
 const RESUME_LOG = path.join(LOG_DIR, "resume_history.json");
 
-function logResumeHistory(analysis, rewritten, score) {
+function logResumeHistory(analysis, rewritten, score, usedModelId) {
   if (!fs.existsSync(LOG_DIR)) {
     fs.mkdirSync(LOG_DIR, { recursive: true });
   }
@@ -642,6 +584,7 @@ function logResumeHistory(analysis, rewritten, score) {
 
   history.push({
     date: new Date().toISOString(),
+    model: usedModelId || BEDROCK_CONFIG.modelId,
     job: {
       title: analysis.jdTitle || null,
       company: analysis.jdCompany || null,
@@ -779,12 +722,12 @@ function displayScore(score) {
 // MAIN PIPELINE
 // ============================================================
 
-export async function tailorResume(jobDescription, resumeData) {
+export async function tailorResume(jobDescription, resumeData, modelOverride) {
+  const { modelId, modelLabel } = resolveModel(modelOverride);
   const systemPrompt = buildSystemPrompt(resumeData);
   const resumeContext = buildResumeContext(resumeData);
 
   // ========== STEP 1: Analysis ==========
-  const modelLabel = isDeepSeek ? "DeepSeek V3.2" : "Claude Haiku 4.5";
   console.log(`\n🔍 STEP 1: Analyzing JD keywords... [${modelLabel}]`);
 
   const analysisUserPrompt = `${resumeContext}\n\n${buildAnalysisPrompt(jobDescription, resumeData)}`;
@@ -795,7 +738,7 @@ export async function tailorResume(jobDescription, resumeData) {
     },
   ];
 
-  const analysisText = await invoke(systemPrompt, analysisMessages, "analysis");
+  const analysisText = await invoke(systemPrompt, analysisMessages, "analysis", modelId);
   const analysisRaw = parseJSON(analysisText, "Step 1 - Analysis");
   const analysis = expandAnalysisResponse(analysisRaw);
   displayAnalysis(analysis);
@@ -830,7 +773,7 @@ export async function tailorResume(jobDescription, resumeData) {
     },
   ];
 
-  const rewriteText = await invoke(systemPrompt, rewriteMessages, "rewrite");
+  const rewriteText = await invoke(systemPrompt, rewriteMessages, "rewrite", modelId);
   const rewriteRaw = parseJSON(rewriteText, "Step 2 - Rewrite");
   const rewritten = expandRewriteResponse(rewriteRaw, resumeData);
 
@@ -845,7 +788,7 @@ export async function tailorResume(jobDescription, resumeData) {
     throw new Error("Invalid rewrite output");
   }
 
-  logResumeHistory(analysis, rewritten, score);
+  logResumeHistory(analysis, rewritten, score, modelId);
   displayCostSummary();
 
   // Display score at the very end for easy viewing

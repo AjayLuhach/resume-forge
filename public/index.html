@@ -203,6 +203,34 @@
     font-family: 'JetBrains Mono', monospace;
   }
 
+  /* Model selector */
+  .model-select {
+    padding: 0.55rem 0.9rem;
+    background: var(--bg3);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.6rem center;
+    padding-right: 2rem;
+    transition: border-color 0.2s;
+  }
+  .model-select:hover { border-color: var(--accent); }
+  .model-select:focus { border-color: var(--accent2); box-shadow: 0 0 0 2px var(--glow2); }
+
+  .textarea-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
   /* Generate button */
   .btn-generate {
     display: inline-flex;
@@ -812,11 +840,16 @@
     <textarea class="jd-textarea" id="jdInput" placeholder="Paste the full job description here..."></textarea>
     <div class="textarea-footer">
       <span class="char-count" id="charCount">0 chars</span>
-      <button class="btn-generate" id="btnGenerate" disabled>
-        <span class="shimmer"></span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        Generate
-      </button>
+      <div class="textarea-actions">
+        <select class="model-select" id="modelSelect">
+          <option value="">Loading...</option>
+        </select>
+        <button class="btn-generate" id="btnGenerate" disabled>
+          <span class="shimmer"></span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Generate
+        </button>
+      </div>
     </div>
   </div>
 
@@ -1027,6 +1060,7 @@ const charCount = document.getElementById('charCount');
 const stepsCard = document.getElementById('stepsCard');
 const errorBox = document.getElementById('errorBox');
 const resultsDiv = document.getElementById('results');
+const modelSelect = document.getElementById('modelSelect');
 
 // Check health on load
 fetch('/api/health')
@@ -1043,6 +1077,23 @@ fetch('/api/health')
   .catch(() => {
     document.getElementById('statusText').textContent = 'Server offline';
     document.querySelector('.status-dot').style.background = 'var(--rose)';
+  });
+
+// Load available models
+fetch('/api/models')
+  .then(r => r.json())
+  .then(data => {
+    modelSelect.innerHTML = '';
+    data.models.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m;
+      if (m === data.default) opt.selected = true;
+      modelSelect.appendChild(opt);
+    });
+  })
+  .catch(() => {
+    modelSelect.innerHTML = '<option value="">unavailable</option>';
   });
 
 // Char count + enable button
@@ -1079,7 +1130,7 @@ btnGenerate.addEventListener('click', async () => {
     const response = await fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jobDescription: jd }),
+      body: JSON.stringify({ jobDescription: jd, model: modelSelect.value || undefined }),
     });
 
     const reader = response.body.getReader();

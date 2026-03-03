@@ -6,6 +6,8 @@
  * Supported models (AWS Bedrock pricing):
  * - Claude Haiku 4.5: Input $1.00/1M, Output $5.00/1M
  * - DeepSeek V3.2: Input $0.80/1M, Output $2.00/1M (update with actual pricing)
+ * - Qwen3 VL 235B: Input $1.00/1M, Output $2.00/1M (update with actual pricing)
+ * - GLM 4.7: Input $0.50/1M, Output $2.00/1M (update with actual pricing)
  */
 
 import fs from 'fs';
@@ -36,6 +38,16 @@ const MODEL_PRICING_USD = {
   // DeepSeek V3.2 - AWS Bedrock pricing (update with actual values)
   'deepseek.v3.2': {
     input: 0.80,
+    output: 2.00,
+  },
+  // Qwen3 VL 235B - AWS Bedrock pricing (update with actual values)
+  'qwen.qwen3-vl-235b-a22b': {
+    input: 1.00,
+    output: 2.00,
+  },
+  // GLM 4.7 - AWS Bedrock pricing (update with actual values)
+  'zai.glm-4.7': {
+    input: 0.50,
     output: 2.00,
   },
   // Default fallback

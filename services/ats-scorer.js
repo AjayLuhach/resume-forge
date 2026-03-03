@@ -252,10 +252,10 @@ export function scoreResume(analysis, rewritten, resumeData) {
     );
   }
 
-  // Title mismatch → -15 points
+  // Title mismatch → -5 points
   if (titleMatch === false) {
-    finalScore = Math.max(0, finalScore - 15);
-    penalties.push(`Title mismatch → -15 points`);
+    finalScore = Math.max(0, finalScore - 5);
+    penalties.push(`Title mismatch → -5 points`);
   }
 
   // ========== 4. BUILD RESPONSE ==========

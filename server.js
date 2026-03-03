@@ -74,7 +74,7 @@ function sendEvent(res, event, data) {
 
 // Main generate endpoint - SSE stream
 app.post('/api/generate', async (req, res) => {
-  const { jobDescription } = req.body;
+  const { jobDescription, model } = req.body;
 
   // Set up SSE
   res.writeHead(200, {
@@ -109,9 +109,10 @@ app.post('/api/generate', async (req, res) => {
     sendEvent(res, 'step', { step: 2, label: `Loaded: ${resumeData.personalInfo?.name}`, done: true });
 
     // Step 3: AI Tailoring
-    sendEvent(res, 'step', { step: 3, label: `AI tailoring via ${provider.toUpperCase()}...` });
+    const modelLabel = model || config.ai.bedrock.modelId || 'haiku';
+    sendEvent(res, 'step', { step: 3, label: `AI tailoring via ${provider.toUpperCase()} [${modelLabel}]...` });
     const tailorResume = await getAIService();
-    const aiResponse = await tailorResume(jobDescription, resumeData);
+    const aiResponse = await tailorResume(jobDescription, resumeData, model);
     sendEvent(res, 'step', { step: 3, label: 'AI tailoring complete', done: true });
 
     // Step 4: Generate outputs (email, LinkedIn)
@@ -188,6 +189,20 @@ app.post('/api/generate', async (req, res) => {
 app.get('/api/health', (req, res) => {
   const { errors, provider } = preflightChecks();
   res.json({ ok: errors.length === 0, provider, errors });
+});
+
+// Available AI models
+app.get('/api/models', (req, res) => {
+  const aliases = config.ai.bedrock.modelAliases || {};
+  const raw = config.ai.bedrock.modelId || 'haiku';
+  // Resolve: if raw is a full model ID, find its alias name
+  const defaultModel = aliases[raw]
+    ? raw
+    : Object.entries(aliases).find(([, id]) => id === raw)?.[0] || raw;
+  res.json({
+    models: Object.keys(aliases),
+    default: defaultModel,
+  });
 });
 
 // Log data endpoints
@@ -273,9 +288,10 @@ app.get('/api/history', (req, res) => {
 const PORT = process.env.PORT || 3456;
 app.listen(PORT, () => {
   const provider = config.ai.provider;
-  const bedrockModel = config.ai.bedrock.activeModel || 'haiku';
+  const bedrockModelId = config.ai.bedrock.modelId || 'haiku';
+  const resolved = config.ai.bedrock.modelAliases?.[bedrockModelId] || bedrockModelId;
   const modelLabel = provider === 'bedrock'
-    ? `Bedrock → ${bedrockModel === 'deepseek' ? 'DeepSeek V3.2' : 'Claude Haiku 4.5'}`
+    ? `Bedrock → ${resolved}`
     : 'Gemini';
 
   console.log(`\n  🚀 Resume Forge Web UI`);
