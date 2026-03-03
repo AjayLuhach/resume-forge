@@ -285,6 +285,89 @@ app.get('/api/history', (req, res) => {
   res.json(readLogFile('resume_history.json') || []);
 });
 
+app.get('/api/resumes', (req, res) => {
+  const resumeDir = join(__dirname, 'logs', 'resumes');
+  if (!fs.existsSync(resumeDir)) return res.json([]);
+  const files = fs.readdirSync(resumeDir).filter(f => f.endsWith('.pdf'));
+  res.json(files);
+});
+
+app.get('/api/resumes/:filename', async (req, res) => {
+  const filename = req.params.filename;
+  // Prevent path traversal
+  if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+    return res.status(400).json({ error: 'Invalid filename' });
+  }
+
+  const resumeDir = join(__dirname, 'logs', 'resumes');
+  if (!fs.existsSync(resumeDir)) fs.mkdirSync(resumeDir, { recursive: true });
+
+  const filePath = join(resumeDir, filename);
+
+  // If PDF already exists, serve it directly
+  if (fs.existsSync(filePath)) {
+    return res.download(filePath);
+  }
+
+  // Otherwise, regenerate from history (same approach as backfill-resumes.js)
+  const history = readLogFile('resume_history.json') || [];
+  const sanitize = (s) => (s || 'Unknown').replace(/[<>:"/\\|?*]/g, '').replace(/\s+/g, '-').substring(0, 40);
+
+  // Find matching history entry by reconstructing filename
+  const entry = history.find(h => {
+    const date = h.date ? new Date(h.date).toISOString().split('T')[0] : '';
+    const expected = `${date}_${sanitize(h.job?.company)}_${sanitize(h.job?.title)}.pdf`;
+    return expected === filename;
+  });
+
+  if (!entry || !entry.resume) {
+    return res.status(404).json({ error: 'Resume not found and no history data to regenerate' });
+  }
+
+  try {
+    const resumeData = loadResumeData();
+
+    // Reconstruct aiResponse from history (same as backfill script)
+    const aiResponse = {
+      title: entry.job?.title || 'Developer',
+      summary: entry.resume.summary || '',
+      bullets: entry.resume.bullets || [],
+      skills: entry.resume.skills || '',
+      projectsUsed: entry.resume.projectsUsed || [],
+      jdTitle: entry.job?.title,
+      jdCompany: entry.job?.company,
+    };
+
+    // Flatten project descriptions to key format
+    if (entry.resume.projects && typeof entry.resume.projects === 'object') {
+      for (const [projectName, description] of Object.entries(entry.resume.projects)) {
+        const key = projectName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+        aiResponse[key] = description;
+      }
+    }
+
+    // Generate DOCX → PDF
+    const tempBasename = `regen_${Date.now()}`;
+    const tempDocx = join(resumeDir, `${tempBasename}.docx`);
+    const outputPaths = { docx: tempDocx, pdf: filePath };
+
+    await generateDocx(aiResponse, outputPaths, resumeData);
+
+    if (checkLibreOffice()) {
+      await convertToPdf(tempDocx, filePath);
+      cleanupDocx(tempDocx);
+    } else {
+      // No LibreOffice — serve DOCX
+      return res.download(tempDocx);
+    }
+
+    res.download(filePath);
+  } catch (error) {
+    console.error('Resume regeneration error:', error);
+    res.status(500).json({ error: `Failed to generate resume: ${error.message}` });
+  }
+});
+
 const PORT = process.env.PORT || 3456;
 app.listen(PORT, () => {
   const provider = config.ai.provider;

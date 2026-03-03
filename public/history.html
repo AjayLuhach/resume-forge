@@ -328,6 +328,48 @@
     flex-shrink: 0;
   }
 
+  .hc-download-btn {
+    padding: 0.35rem 0.7rem;
+    border-radius: 7px;
+    background: rgba(99,102,241,0.1);
+    border: 1px solid rgba(99,102,241,0.2);
+    color: var(--accent);
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .hc-download-btn:hover {
+    background: rgba(99,102,241,0.2);
+    border-color: rgba(99,102,241,0.35);
+    color: #a5b4fc;
+  }
+
+  .hc-download-btn.generating {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  .hc-download-btn .btn-spinner {
+    display: none;
+    width: 10px; height: 10px;
+    border: 1.5px solid var(--accent);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+
+  .hc-download-btn.generating .btn-spinner { display: inline-block; }
+  .hc-download-btn.generating .btn-label { display: none; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
   .hc-expand-icon {
     color: var(--text3);
     transition: transform 0.2s;
@@ -499,6 +541,18 @@
 
 <script>
 let allHistory = [];
+let availableResumes = new Set();
+
+function sanitizeForFilename(s) {
+  return (s || 'Unknown').replace(/[<>:"/\\|?*]/g, '').replace(/\s+/g, '-').substring(0, 40);
+}
+
+function getResumeFilename(h) {
+  const date = h.date ? new Date(h.date).toISOString().split('T')[0] : '';
+  const company = sanitizeForFilename(h.job?.company);
+  const title = sanitizeForFilename(h.job?.title);
+  return `${date}_${company}_${title}.pdf`;
+}
 
 function escHtml(str) {
   if (!str) return '';
@@ -521,8 +575,13 @@ function barColor(score) {
 
 async function loadHistory() {
   try {
-    const res = await fetch('/api/history');
-    allHistory = await res.json();
+    const [histRes, resumeRes] = await Promise.all([
+      fetch('/api/history'),
+      fetch('/api/resumes')
+    ]);
+    allHistory = await histRes.json();
+    const resumeFiles = await resumeRes.json();
+    availableResumes = new Set(resumeFiles);
     allHistory.reverse(); // newest first
     renderStats();
     renderChart();
@@ -643,6 +702,12 @@ function renderHistory(items) {
           </div>
         </div>
         <div class="hc-penalties">${penaltiesHtml}</div>
+        ${(() => {
+          const fname = getResumeFilename(h);
+          const hasResume = availableResumes.has(fname);
+          const label = hasResume ? '&#8595; PDF' : '&#9881; PDF';
+          return `<a class="hc-download-btn" href="/api/resumes/${encodeURIComponent(fname)}" onclick="handleDownload(event, this)" download title="${hasResume ? 'Download resume' : 'Generate & download resume'}"><span class="btn-label">${label}</span><span class="btn-spinner"></span></a>`;
+        })()}
         <div class="hc-date">${date}</div>
         <div class="hc-expand-icon">&#9660;</div>
       </div>
@@ -675,6 +740,42 @@ document.getElementById('searchInput').addEventListener('input', e => {
   });
   renderHistory(filtered);
 });
+
+async function handleDownload(e, btn) {
+  e.stopPropagation();
+  e.preventDefault();
+
+  if (btn.classList.contains('generating')) return;
+  btn.classList.add('generating');
+
+  try {
+    const res = await fetch(btn.href);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Download failed' }));
+      alert(err.error || 'Download failed');
+      return;
+    }
+
+    // Trigger download from response blob
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = btn.href.split('/').pop();
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+
+    // Update button to show it's now available
+    btn.querySelector('.btn-label').innerHTML = '&#8595; PDF';
+    btn.title = 'Download resume';
+  } catch {
+    alert('Failed to download resume');
+  } finally {
+    btn.classList.remove('generating');
+  }
+}
 
 loadHistory();
 </script>
