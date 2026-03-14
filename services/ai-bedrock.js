@@ -259,7 +259,10 @@ EXTRACTION RULES:
    - requiredSkills: Top 7-10 must-have skills (technical + soft skills + methodologies)
    - niceToHave: Optional skills
    - phrases: 3-5 SHORT action phrases
-   - contact: Extract ALL contact info + application instructions (email, phone, any relevant link (LinkedIn/Twitter/portfolio/website), recruiter name, subject line requirements, any special instructions)
+   - contact: Extract ALL contact info + application instructions (email, phone, recruiter name, subject line requirements, any special instructions)
+     - link: ONLY LinkedIn/Twitter/social profile URLs of the recruiter/poster
+     - applyUrl: Application form URL, careers page link, Google Form, or any website where candidate must go to apply (NOT LinkedIn/social profiles)
+     - instructions: What to do with applyUrl (e.g., "Fill out the Google Form and attach resume", "Apply through careers portal")
    - jobType: One of "Full-time", "Contract", "Internship", "Part-time", "Freelance" — infer from JD context. Default to "Full-time" if unclear.
    - salary: Salary/compensation mentioned in JD as-is (e.g., "80k-120k USD", "15-25 LPA", "50/hr") converted to LPA for INR or null if not mentioned.
 
@@ -291,8 +294,9 @@ Return ONLY valid JSON:
     "name": "recruiter/contact name or null",
     "email": "email or null",
     "phone": "phone or null",
-    "link": "relevant link or null",
-    "instructions": "application instructions or null"
+    "link": "LinkedIn/Twitter/social profile URL or null",
+    "applyUrl": "application form/careers page/Google Form URL or null",
+    "instructions": "what to do at applyUrl or null"
   }
 }`;
 }
@@ -520,6 +524,7 @@ function expandAnalysisResponse(abbreviated) {
       email: null,
       phone: null,
       link: null,
+      applyUrl: null,
       instructions: null,
     },
     // Resume context for Step 2 (extracted from full resume)
@@ -633,12 +638,13 @@ function displayAnalysis(analysis) {
   }
 
   const c = analysis.contact || {};
-  if (c.name || c.email || c.phone || c.link || c.instructions) {
+  if (c.name || c.email || c.phone || c.link || c.applyUrl || c.instructions) {
     console.log("\n📬 SEND RESUME TO:");
     if (c.name) console.log(`   Name:  ${c.name}`);
     if (c.email) console.log(`   Email: ${c.email}`);
     if (c.phone) console.log(`   Phone: ${c.phone}`);
     if (c.link) console.log(`   Link:  ${c.link}`);
+    if (c.applyUrl) console.log(`   Apply: ${c.applyUrl}`);
     if (c.instructions) console.log(`   📝 ${c.instructions}`);
   }
 

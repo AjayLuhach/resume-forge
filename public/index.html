@@ -986,6 +986,18 @@
       </div>
     </div>
 
+    <!-- Apply Instructions -->
+    <div class="card fade-in" id="applyCard" style="display:none;">
+      <div class="card-title">
+        <span class="icon" style="background:rgba(167,139,250,0.12);color:var(--purple);">&#8599;</span>
+        Apply Here
+      </div>
+      <div style="padding:0.8rem 1.2rem;">
+        <a id="applyUrl" href="#" target="_blank" style="color:var(--purple);font-size:0.85rem;word-break:break-all;"></a>
+        <div id="applyInstructions" style="margin-top:0.5rem;font-size:0.8rem;color:var(--text2);line-height:1.5;"></div>
+      </div>
+    </div>
+
     <!-- Email & LinkedIn -->
     <div class="grid-2 fade-in">
       <!-- Email -->
@@ -1316,6 +1328,19 @@ function renderResults(data) {
     }
   } else {
     linkedinCard.style.display = 'none';
+  }
+
+  // Apply Instructions
+  const applyCard = document.getElementById('applyCard');
+  if (data.contact?.applyUrl) {
+    applyCard.style.display = '';
+    const applyUrlEl = document.getElementById('applyUrl');
+    applyUrlEl.href = data.contact.applyUrl;
+    applyUrlEl.textContent = data.contact.applyUrl;
+    const instrEl = document.getElementById('applyInstructions');
+    instrEl.textContent = data.contact.instructions || 'Open link and apply';
+  } else {
+    applyCard.style.display = 'none';
   }
 
   // Contact

@@ -20,7 +20,7 @@ const CONTACT_LOG = path.join(LOG_DIR, "contacts.json");
  */
 export function logContactDetails(contact, jobInfo) {
   // Skip if no contact info
-  if (!contact || (!contact.email && !contact.phone && !contact.link && !contact.name)) {
+  if (!contact || (!contact.email && !contact.phone && !contact.link && !contact.applyUrl && !contact.name)) {
     return;
   }
 
@@ -75,12 +75,21 @@ export function logContactDetails(contact, jobInfo) {
     });
   }
 
-  // Add link (LinkedIn, Twitter, portfolio, website, etc.)
+  // Add link (LinkedIn, Twitter, social profile of recruiter/poster)
   if (contact.link) {
     entry.contacts.push({
       type: "link",
       value: contact.link,
       name: contact.name || null
+    });
+  }
+
+  // Add application URL (form, careers page, Google Form, etc.)
+  if (contact.applyUrl) {
+    entry.contacts.push({
+      type: "apply_link",
+      value: contact.applyUrl,
+      name: contact.instructions || null
     });
   }
 

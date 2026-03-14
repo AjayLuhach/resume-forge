@@ -368,7 +368,7 @@ app.get('/api/resumes/:filename', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3456;
+const PORT = process.env.PORT || 5003;
 app.listen(PORT, () => {
   const provider = config.ai.provider;
   const bedrockModelId = config.ai.bedrock.modelId || 'haiku';

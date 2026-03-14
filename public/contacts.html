@@ -278,6 +278,7 @@
 
   .badge-email { background: rgba(251,191,36,0.12); color: var(--amber); }
   .badge-linkedin { background: rgba(34,211,238,0.12); color: var(--cyan); }
+  .badge-link { background: rgba(167,139,250,0.12); color: var(--purple); }
   .badge-sent { background: rgba(52,211,153,0.12); color: var(--green); }
   .badge-pending { background: rgba(251,113,133,0.12); color: var(--rose); }
 
@@ -423,6 +424,7 @@
     <button class="filter-chip active" data-filter="all">All</button>
     <button class="filter-chip" data-filter="email">Has Email</button>
     <button class="filter-chip" data-filter="linkedin">Has LinkedIn</button>
+    <button class="filter-chip" data-filter="link">Has Link/Form</button>
     <button class="filter-chip" data-filter="sent">Email Sent</button>
     <button class="filter-chip" data-filter="pending">Pending</button>
   </div>
@@ -466,7 +468,7 @@ async function loadContacts() {
   try {
     const res = await fetch('/api/contacts');
     allContacts = await res.json();
-    allContacts.reverse(); // newest first
+    allContacts.reverse(); // newest first (appended chronologically)
     renderStats();
     renderContacts();
   } catch {
@@ -478,6 +480,7 @@ function renderStats() {
   const total = allContacts.length;
   const withEmail = allContacts.filter(c => c.contacts?.some(x => x.type === 'email')).length;
   const withLinkedIn = allContacts.filter(c => c.linkedInDM?.linkedInUrl).length;
+  const withLink = allContacts.filter(c => c.contacts?.some(x => x.type === 'apply_link')).length;
   const sent = allContacts.filter(c => c.emailSent).length;
   const companies = new Set(allContacts.map(c => c.job?.company).filter(Boolean)).size;
 
@@ -486,6 +489,7 @@ function renderStats() {
     { val: companies, label: 'Companies', color: 'var(--purple)' },
     { val: withEmail, label: 'Has Email', color: 'var(--amber)' },
     { val: withLinkedIn, label: 'Has LinkedIn', color: 'var(--cyan)' },
+    { val: withLink, label: 'Has Link/Form', color: 'var(--purple)' },
     { val: sent, label: 'Emails Sent', color: 'var(--green)' },
   ];
 
@@ -499,6 +503,7 @@ function filterContacts() {
     if (currentFilter === 'all') return true;
     if (currentFilter === 'email') return c.contacts?.some(x => x.type === 'email');
     if (currentFilter === 'linkedin') return c.linkedInDM?.linkedInUrl;
+    if (currentFilter === 'link') return c.contacts?.some(x => x.type === 'apply_link');
     if (currentFilter === 'sent') return c.emailSent;
     if (currentFilter === 'pending') return !c.emailSent;
     return true;
@@ -525,20 +530,23 @@ function renderContacts() {
     let badges = '';
     const hasEmail = c.contacts?.some(x => x.type === 'email');
     const hasLinkedIn = c.linkedInDM?.linkedInUrl;
+    const hasLink = c.contacts?.some(x => x.type === 'apply_link');
     if (hasEmail) badges += '<span class="badge badge-email">Email</span>';
     if (hasLinkedIn) badges += '<span class="badge badge-linkedin">LinkedIn</span>';
+    if (hasLink) badges += '<span class="badge badge-link">Link</span>';
     if (c.emailSent) badges += '<span class="badge badge-sent">Sent</span>';
     else if (hasEmail) badges += '<span class="badge badge-pending">Pending</span>';
 
     // Contacts list
     let contactsHtml = '';
     (c.contacts || []).forEach(ct => {
+      const isApplyLink = ct.type === 'apply_link';
       const isLink = ct.type === 'link' || ct.value?.startsWith('http');
       const isEmail = ct.type === 'email';
-      const iconBg = isEmail ? 'rgba(251,191,36,0.15)' : 'rgba(34,211,238,0.15)';
-      const iconFg = isEmail ? 'var(--amber)' : 'var(--cyan)';
-      const iconText = isEmail ? '@' : 'in';
-      const val = isLink
+      const iconBg = isEmail ? 'rgba(251,191,36,0.15)' : isApplyLink ? 'rgba(167,139,250,0.15)' : isLink ? 'rgba(34,211,238,0.15)' : 'rgba(34,211,238,0.15)';
+      const iconFg = isEmail ? 'var(--amber)' : isApplyLink ? 'var(--purple)' : isLink ? 'var(--cyan)' : 'var(--cyan)';
+      const iconText = isEmail ? '@' : isApplyLink ? '&#8599;' : isLink ? 'in' : '&#9742;';
+      const val = (isLink || isApplyLink)
         ? `<a href="${escHtml(ct.value)}" target="_blank">${escHtml(ct.value)}</a>`
         : isEmail
         ? `<a href="mailto:${escHtml(ct.value)}">${escHtml(ct.value)}</a>`
