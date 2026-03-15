@@ -53,7 +53,7 @@ export class BedrockProvider extends BaseProvider {
 
   async invoke(systemPrompt, messages, stepName) {
     const client = this.getClient();
-    const maxTokens = this.maxTokens[stepName] || 2048;
+    const maxTokens = this.maxTokens[stepName] || 8000;
 
     const converseMessages = messages.map((msg) => ({
       role: msg.role,
@@ -72,6 +72,10 @@ export class BedrockProvider extends BaseProvider {
 
     try {
       const response = await client.send(command);
+
+      if (response.stopReason === 'max_tokens') {
+        console.warn(`⚠ Response truncated (hit maxTokens=${maxTokens}) in ${stepName}`);
+      }
 
       if (response.usage) {
         logApiCall(

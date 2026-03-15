@@ -101,8 +101,8 @@ export const config = {
       },
 
       maxTokens: {
-        analysis: 8192,
-        rewrite: 8192,
+        analysis: 16384,
+        rewrite: 16384,
       },
     },
   },
