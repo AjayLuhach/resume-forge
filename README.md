@@ -34,8 +34,11 @@ npm run setup
 npm start
 
 # Option B: Web UI
+Instead of reading README, you can explore about project directly in the web application.
 npm run web
-# Open http://localhost:5003
+
+# Open
+http://localhost:5003/about.html
 ```
 
 ## Configuration
