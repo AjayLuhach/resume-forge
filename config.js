@@ -11,8 +11,12 @@ import fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Output directory for resumes
-const outputDir = join(homedir(), 'Music');
+// Output directory for resumes (default: ./output)
+const outputDir = process.env.OUTPUT_DIR
+  ? (process.env.OUTPUT_DIR.startsWith('/') || process.env.OUTPUT_DIR.startsWith('~')
+    ? process.env.OUTPUT_DIR.replace(/^~/, homedir())
+    : join(__dirname, process.env.OUTPUT_DIR))
+  : join(__dirname, 'output');
 
 /**
  * Build output filename from user name and job role
@@ -97,8 +101,8 @@ export const config = {
       },
 
       maxTokens: {
-        analysis: 3072,
-        rewrite: 2048,
+        analysis: 8192,
+        rewrite: 8192,
       },
     },
   },

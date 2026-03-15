@@ -10,7 +10,7 @@ import { dirname } from "path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const LOG_DIR = path.join(__dirname, "..", "logs");
+const LOG_DIR = path.join(__dirname, "..", "..", "logs");
 const CONTACT_LOG = path.join(LOG_DIR, "contacts.json");
 
 /**

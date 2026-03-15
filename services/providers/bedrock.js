@@ -30,8 +30,8 @@ export class BedrockProvider extends BaseProvider {
       : this.modelId.split(".").pop();
     this.region = bedrockConfig.region || process.env.AWS_REGION || "us-east-1";
     this.maxTokens = bedrockConfig.maxTokens || {
-      analysis: 3072,
-      rewrite: 2048,
+      analysis: 8192,
+      rewrite: 8192,
     };
     this.client = null;
   }

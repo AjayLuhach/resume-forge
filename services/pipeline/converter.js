@@ -2,8 +2,8 @@
  * Converter Service - DOCX to PDF conversion
  *
  * Supports two conversion backends (auto-detected):
- *   1. Puppeteer (Chrome/Chromium) - primary, no extra install needed if Chrome exists
- *   2. LibreOffice - fallback, requires `libreoffice` in PATH
+ *   1. LibreOffice (best quality) - auto-installs libreoffice-writer if missing
+ *   2. Puppeteer (Chrome) - fallback, DOCX→HTML→PDF (may lose some formatting)
  *
  * If neither is available, outputs DOCX only with a warning.
  */
@@ -12,6 +12,50 @@ import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import config from "../../config.js";
+
+// ── Auto-Install ──
+
+/**
+ * Attempt to auto-install libreoffice-writer (minimal package ~150MB)
+ * Supports Linux (apt/dnf/pacman) and macOS (brew)
+ * @returns {boolean} true if installation succeeded
+ */
+function installLibreOffice() {
+  const platform = process.platform;
+  let cmd = null;
+
+  if (platform === "linux") {
+    // Detect package manager
+    const hasCmd = (c) => { try { execSync(`which ${c}`, { stdio: "pipe" }); return true; } catch { return false; } };
+    if (hasCmd("apt-get")) cmd = "sudo apt-get install -y libreoffice-writer";
+    else if (hasCmd("dnf")) cmd = "sudo dnf install -y libreoffice-writer";
+    else if (hasCmd("pacman")) cmd = "sudo pacman -S --noconfirm libreoffice-still";
+  } else if (platform === "darwin") {
+    const hasBrew = () => { try { execSync("which brew", { stdio: "pipe" }); return true; } catch { return false; } };
+    if (hasBrew()) cmd = "brew install --cask libreoffice";
+  }
+
+  if (!cmd) return false;
+
+  try {
+    console.log(`📦 LibreOffice not found — installing for best PDF quality...`);
+    console.log(`   Running: ${cmd}`);
+    execSync(cmd, { stdio: "inherit", timeout: 300000 });
+    // Verify
+    if (checkLibreOffice()) {
+      console.log("✅ LibreOffice installed successfully");
+      return true;
+    }
+  } catch (error) {
+    console.warn(`⚠️  Auto-install failed: ${error.message}`);
+    console.warn("   You can install manually:");
+    if (platform === "linux") console.warn("   sudo apt install libreoffice-writer");
+    else if (platform === "darwin") console.warn("   brew install --cask libreoffice");
+    else console.warn("   Download from https://www.libreoffice.org/download/");
+  }
+
+  return false;
+}
 
 // ── Detection ──
 
@@ -35,6 +79,7 @@ export function checkLibreOffice() {
  * @returns {string|null} path to Chrome or null
  */
 function findChrome() {
+  const isWin = process.platform === "win32";
   const candidates = [
     // Linux
     "google-chrome",
@@ -43,17 +88,33 @@ function findChrome() {
     "chromium",
     // macOS
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Chromium.app/Contents/MacOS/Chromium",
     // Windows (common paths)
     "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+    `${process.env.LOCALAPPDATA || ""}\\Google\\Chrome\\Application\\chrome.exe`,
   ];
 
   for (const candidate of candidates) {
+    if (!candidate) continue;
     try {
       execSync(`"${candidate}" --version`, {
         stdio: "pipe",
         encoding: "utf-8",
       });
+      // Puppeteer needs an absolute path — resolve command names
+      if (!candidate.includes("/") && !candidate.includes("\\")) {
+        try {
+          const whichCmd = isWin ? "where" : "which";
+          const resolved = execSync(`${whichCmd} "${candidate}"`, {
+            stdio: "pipe",
+            encoding: "utf-8",
+          }).trim().split("\n")[0];
+          if (resolved) return resolved;
+        } catch {
+          // fall through to return the candidate as-is
+        }
+      }
       return candidate;
     } catch {
       // try next
@@ -182,7 +243,7 @@ async function convertWithLibreOffice(docxPath, targetPdfPath) {
 
 /**
  * Convert DOCX to PDF using the best available backend
- * Priority: Puppeteer (Chrome) → LibreOffice → Error
+ * Priority: LibreOffice (best formatting) → Puppeteer (Chrome) → Error
  *
  * @param {string} docxPath - Path to input DOCX file
  * @param {string} targetPdfPath - Desired output PDF path
@@ -195,21 +256,7 @@ export async function convertToPdf(docxPath, targetPdfPath) {
     throw new Error(`DOCX file not found: ${docxPath}`);
   }
 
-  // Try Puppeteer first (Chrome-based, no extra install)
-  const chromePath = findChrome();
-  if (chromePath) {
-    try {
-      console.log("   Using: Chrome (via Puppeteer)");
-      await convertWithPuppeteer(docxPath, targetPdfPath);
-      console.log(`✅ PDF saved: ${targetPdfPath}`);
-      return targetPdfPath;
-    } catch (error) {
-      console.warn(`⚠️  Puppeteer conversion failed: ${error.message}`);
-      console.warn("   Falling back to LibreOffice...");
-    }
-  }
-
-  // Fallback to LibreOffice
+  // Try LibreOffice first (best DOCX fidelity — preserves colors, fonts, formatting)
   if (checkLibreOffice()) {
     console.log("   Using: LibreOffice");
     await convertWithLibreOffice(docxPath, targetPdfPath);
@@ -217,11 +264,32 @@ export async function convertToPdf(docxPath, targetPdfPath) {
     return targetPdfPath;
   }
 
+  // LibreOffice not found — try auto-installing
+  if (installLibreOffice()) {
+    console.log("   Using: LibreOffice (just installed)");
+    await convertWithLibreOffice(docxPath, targetPdfPath);
+    console.log(`✅ PDF saved: ${targetPdfPath}`);
+    return targetPdfPath;
+  }
+
+  // Fallback to Puppeteer (Chrome-based, DOCX→HTML→PDF — may lose some styling)
+  const chromePath = findChrome();
+  if (chromePath) {
+    try {
+      console.log("   Using: Chrome (via Puppeteer — some formatting may differ)");
+      await convertWithPuppeteer(docxPath, targetPdfPath);
+      console.log(`✅ PDF saved: ${targetPdfPath}`);
+      return targetPdfPath;
+    } catch (error) {
+      console.warn(`⚠️  Puppeteer conversion failed: ${error.message}`);
+    }
+  }
+
   throw new Error(
     "No PDF converter available.\n" +
       "Install one of:\n" +
-      "  - Google Chrome (recommended, usually already installed)\n" +
-      "  - LibreOffice: sudo apt install libreoffice (Linux) | brew install --cask libreoffice (macOS)",
+      "  - LibreOffice: sudo apt install libreoffice-writer (Linux) | brew install --cask libreoffice (macOS)\n" +
+      "  - Google Chrome (fallback, may lose some formatting)",
   );
 }
 

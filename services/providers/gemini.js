@@ -66,12 +66,13 @@ export class GeminiProvider extends BaseProvider {
     for (const modelName of pool) {
       try {
         this.currentModel = modelName;
+        const isThinkingModel = modelName.includes("2.5") || modelName.includes("3-");
         const model = client.getGenerativeModel({
           model: modelName,
           systemInstruction: systemPrompt,
           generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: stepName === "analysis" ? 3072 : 2048,
+            ...(isThinkingModel ? {} : { temperature: 0.1 }),
+            ...(isThinkingModel ? { thinkingConfig: { thinkingBudget: 1024 } } : {}),
           },
         });
 
@@ -82,7 +83,20 @@ export class GeminiProvider extends BaseProvider {
 
         const result = await model.generateContent(userMessage);
         const response = result.response;
-        const text = response.text();
+
+        // Handle thinking models (2.5+) — extract only non-thought text parts
+        const parts = response.candidates?.[0]?.content?.parts || [];
+        const textParts = parts.filter(p => p.text && !p.thought);
+        const text = textParts.length > 0
+          ? textParts.map(p => p.text).join("")
+          : response.text();
+
+        if (!text || text.trim().length === 0) {
+          console.error(`Gemini ${modelName} returned empty text for ${stepName}`);
+          console.error("Parts:", JSON.stringify(parts.map(p => ({ hasText: !!p.text, textLen: p.text?.length, thought: !!p.thought }))));
+          console.error("Finish reason:", response.candidates?.[0]?.finishReason);
+          throw new Error(`Empty response from Gemini ${modelName}`);
+        }
 
         // Log usage if available
         const usage = response.usageMetadata;

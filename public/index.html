@@ -771,7 +771,7 @@
   }
 
   .nav-inner {
-    max-width: 1100px;
+    max-width: 1200px;
     margin: 0 auto;
     display: flex;
     align-items: center;
@@ -841,6 +841,9 @@
     <div class="textarea-footer">
       <span class="char-count" id="charCount">0 chars</span>
       <div class="textarea-actions">
+        <select class="model-select" id="providerSelect">
+          <option value="">Loading...</option>
+        </select>
         <select class="model-select" id="modelSelect">
           <option value="">Loading...</option>
         </select>
@@ -1073,6 +1076,8 @@ const stepsCard = document.getElementById('stepsCard');
 const errorBox = document.getElementById('errorBox');
 const resultsDiv = document.getElementById('results');
 const modelSelect = document.getElementById('modelSelect');
+const providerSelect = document.getElementById('providerSelect');
+let providersData = {};
 
 // Check health on load
 fetch('/api/health')
@@ -1091,22 +1096,47 @@ fetch('/api/health')
     document.querySelector('.status-dot').style.background = 'var(--rose)';
   });
 
-// Load available models
+// Populate model dropdown for selected provider
+function updateModels(providerName) {
+  modelSelect.innerHTML = '';
+  const provider = providersData[providerName];
+  if (!provider || !provider.models?.models?.length) {
+    modelSelect.innerHTML = '<option value="">no models</option>';
+    return;
+  }
+  provider.models.models.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = m;
+    if (m === provider.models.default) opt.selected = true;
+    modelSelect.appendChild(opt);
+  });
+}
+
+// Load available providers and models
 fetch('/api/models')
   .then(r => r.json())
   .then(data => {
-    modelSelect.innerHTML = '';
-    data.models.forEach(m => {
+    providersData = data.providers;
+    providerSelect.innerHTML = '';
+    for (const [name, info] of Object.entries(data.providers)) {
       const opt = document.createElement('option');
-      opt.value = m;
-      opt.textContent = m;
-      if (m === data.default) opt.selected = true;
-      modelSelect.appendChild(opt);
-    });
+      opt.value = name;
+      opt.textContent = info.configured ? info.label : `${info.label} (not configured)`;
+      opt.disabled = !info.configured;
+      if (name === data.activeProvider) opt.selected = true;
+      providerSelect.appendChild(opt);
+    }
+    updateModels(data.activeProvider);
   })
   .catch(() => {
+    providerSelect.innerHTML = '<option value="">unavailable</option>';
     modelSelect.innerHTML = '<option value="">unavailable</option>';
   });
+
+providerSelect.addEventListener('change', () => {
+  updateModels(providerSelect.value);
+});
 
 // Char count + enable button
 jdInput.addEventListener('input', () => {
@@ -1142,7 +1172,7 @@ btnGenerate.addEventListener('click', async () => {
     const response = await fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jobDescription: jd, model: modelSelect.value || undefined }),
+      body: JSON.stringify({ jobDescription: jd, provider: providerSelect.value || undefined, model: modelSelect.value || undefined }),
     });
 
     const reader = response.body.getReader();

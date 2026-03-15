@@ -2,5 +2,6 @@ node_modules
 .env
 logs/*
 tmp/
+output/
 *.pdf
 !.env.example
