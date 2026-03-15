@@ -1,0 +1,332 @@
+{
+  "personalInfo": {
+    "name": "Rahul Sharma",
+    "dob": "15/06/1999",
+    "email": "rahul.sharma@gmail.com",
+    "phone": "+91-9876543210",
+    "location": "Bangalore, Karnataka, India",
+    "linkedin": "linkedin.com/in/rahulsharma",
+    "github": "github.com/rahulsharma",
+    "portfolio": "https://rahulsharma.dev/"
+  },
+  "meta": {
+    "experienceStart": "Jun 2022",
+    "stack": "MERN",
+    "primaryCloud": "AWS",
+    "coreProjects": ["TrackWave", "ShopGrid"],
+    "selectableProjects": ["PayrollHub", "QuickChat", "DesignBoard"],
+    "editableProjects": ["TrackWave", "ShopGrid"],
+    "cannotClaim": [
+      "Java",
+      "Spring Boot",
+      "Kotlin",
+      "Scala",
+      "Python Django",
+      "Python Flask",
+      "FastAPI",
+      "Ruby on Rails",
+      "PHP Laravel",
+      "C#",
+      ".NET",
+      "ASP.NET",
+      "Go",
+      "Rust",
+      "Elixir",
+      "GCP",
+      "Google Cloud",
+      "Azure",
+      "IBM Cloud",
+      "Kubernetes",
+      "K8s",
+      "Terraform",
+      "Ansible",
+      "Puppet",
+      "Microservices",
+      "Service Mesh",
+      "Istio",
+      "Kafka",
+      "RabbitMQ",
+      "Apache Spark",
+      "Cassandra",
+      "DynamoDB",
+      "GraphQL",
+      "gRPC",
+      "Machine Learning",
+      "ML",
+      "AI",
+      "Data Science",
+      "TensorFlow",
+      "PyTorch",
+      "iOS",
+      "Swift",
+      "Android Native",
+      "Flutter",
+      "React Native"
+    ]
+  },
+  "professionalSummary": {
+    "default": "Full stack MERN Developer with 3+ years of experience building scalable web applications using React, Next.js, TypeScript, Express and Node.js. Focused on clean architecture, performance optimization, and delivering production-grade solutions.",
+    "keywords": [
+      "Full Stack Developer",
+      "MERN Stack",
+      "React",
+      "Next.js",
+      "TypeScript",
+      "Node.js",
+      "Express",
+      "MongoDB",
+      "Performance Optimization",
+      "Scalable Applications"
+    ]
+  },
+  "skills": {
+    "frontend": [
+      "React.js",
+      "Next.js",
+      "TypeScript",
+      "JavaScript (ES6+)",
+      "HTML5",
+      "CSS3/SCSS",
+      "Tailwind CSS",
+      "Material UI",
+      "Bootstrap",
+      "Redux Toolkit",
+      "React Query",
+      "Webpack"
+    ],
+    "backend": [
+      "Node.js",
+      "Express.js",
+      "PostgreSQL",
+      "MongoDB",
+      "MySQL",
+      "Redis",
+      "Firebase",
+      "WebSockets",
+      "Socket.io"
+    ],
+    "toolsDevOps": [
+      "Git",
+      "GitHub",
+      "Docker",
+      "Docker Compose",
+      "Vercel",
+      "AWS",
+      "EC2",
+      "S3",
+      "Nginx",
+      "Linux",
+      "Github Actions",
+      "CI/CD Pipelines",
+      "Postman",
+      "Jira",
+      "Agile",
+      "Scrum",
+      "Jest",
+      "ESLint",
+      "Prettier"
+    ],
+    "other": [
+      "REST APIs",
+      "Responsive Design",
+      "Performance Optimization",
+      "SEO",
+      "SSR",
+      "Authentication",
+      "Authorization",
+      "JWT",
+      "OAuth2",
+      "Role-Based Access Control (RBAC)",
+      "Security Best Practices",
+      "OWASP Top 10",
+      "Input Validation",
+      "Joi",
+      "System Design",
+      "Database Design",
+      "MongoDB Indexing",
+      "MongoDB Aggregation",
+      "Query Optimization",
+      "Code Reviews",
+      "Agile Development"
+    ]
+  },
+  "experience": [
+    {
+      "company": "TechNova Solutions Pvt. Ltd.",
+      "title": "SDE (Full Stack Developer)",
+      "duration": "Jun 2022 – Present",
+      "location": "Bangalore",
+      "isCurrent": true,
+      "projects": [
+        {
+          "name": "TrackWave – Fleet Management & Logistics Platform",
+          "description": "Large-scale B2B SaaS platform for managing fleet operations and logistics, used by transport companies and warehouse operators across India. Built real-time vehicle tracking with map integrations, route optimization dashboards, driver management modules, and automated alert systems for delivery SLA breaches. Implemented WebSocket-based live location updates, role-based access control for fleet managers and drivers, and MongoDB aggregation pipelines for analytics reporting. Improved API response times by 15x through proper indexing and query optimization.",
+          "coreTech": [
+            "Real-Time WebSocket Tracking",
+            "Map Integration",
+            "MongoDB Advanced Optimization",
+            "Role-Based Access Control",
+            "Automated Alert System"
+          ],
+          "stackUsed": {
+            "frontend": "React, TypeScript, Tailwind CSS",
+            "backend": "Node.js, Express, MongoDB",
+            "security": "JWT, RBAC, XSS/CSRF Prevention",
+            "realtime": "WebSockets, Socket.io"
+          }
+        },
+        {
+          "name": "PayrollHub Internal System",
+          "description": "Multi-tenant HR and payroll platform supporting multiple organizations with role-based access control (Super Admin, Admin, HR, Employee). Delivered modules for employee onboarding, attendance, leave management, and payroll processing with tax calculations. Implemented biometric attendance integration and complex salary computation logic with configurable business rules.",
+          "coreTech": [
+            "Multi-Tenant Architecture",
+            "Payroll Processing",
+            "Biometric Integration",
+            "Policy-Based Access Control"
+          ],
+          "stackUsed": {
+            "frontend": "React, Tailwind CSS, Material UI",
+            "backend": "Node.js, Express, MongoDB, MySQL",
+            "security": "API Key Authentication, RBAC"
+          }
+        },
+        {
+          "name": "ShopGrid – E-commerce Marketplace Platform",
+          "description": "Multi-vendor e-commerce platform with seller dashboards, product catalog management, order processing workflows, and real-time inventory tracking. Built responsive React UI with component-based architecture, integrated payment gateway APIs, and implemented search with filters and sorting using Elasticsearch-backed queries. Added real-time chat between buyers and sellers using Socket.io and internationalization support for Hindi and English.",
+          "coreTech": [
+            "Multi-Vendor Architecture",
+            "Payment Gateway Integration",
+            "Real-Time Chat",
+            "Search & Filtering",
+            "i18n Support"
+          ],
+          "stackUsed": {
+            "frontend": "React, HTML5, Tailwind",
+            "backend": "Node.js, Express, MongoDB",
+            "realtime": "WebSockets, Socket.io",
+            "integration": "Payment APIs, SMS Gateway"
+          }
+        },
+        {
+          "name": "QuickChat – Team Communication App",
+          "description": "Internal team communication tool with channels, direct messaging, file sharing, and threaded conversations. Built with Next.js frontend and Express backend using PostgreSQL for structured data and Redis for session management and caching. Implemented real-time messaging with Socket.io, file upload to S3, and notification system with email and push notification support.",
+          "coreTech": [
+            "Next.js SSR",
+            "PostgreSQL",
+            "Redis Caching",
+            "S3 File Upload",
+            "Push Notifications"
+          ],
+          "stackUsed": {
+            "frontend": "Next.js, React, TypeScript, Material UI",
+            "backend": "Express, PostgreSQL, Redis",
+            "features": "SSR, Real-Time Messaging"
+          }
+        },
+        {
+          "name": "DesignBoard – Cloud Billing & Inventory",
+          "description": "Cloud-based billing and inventory management platform for retail businesses. Implemented invoice generation, stock tracking with alerts, party/ledger management, and GST compliance workflows. Built with React frontend and Express backend on MySQL with comprehensive input validation and security measures.",
+          "coreTech": [
+            "GST Compliance",
+            "Invoice Generation",
+            "Inventory Management",
+            "Multi-User Access Control"
+          ],
+          "stackUsed": {
+            "frontend": "React, HTML5, Tailwind",
+            "backend": "Node.js, Express, MySQL",
+            "security": "JWT, RBAC, Input Validation"
+          }
+        }
+      ],
+      "bullets": [
+        "Built & maintained 5+ production web applications with React, Next.js, TypeScript & Tailwind CSS, delivering responsive, scalable solutions",
+        "Improved page load times and Core Web Vitals by 40% through code splitting, lazy loading, and webpack optimization",
+        "Integrated Redux Toolkit & React Query for optimized state management across complex frontend applications",
+        "Optimized backend performance on MongoDB and SQL databases through indexing and aggregation pipelines, reducing API response time by 10x",
+        "Developed fleet management platform (TrackWave) with real-time WebSocket tracking, automated alerts, and comprehensive security practices",
+        "Built multi-tenant payroll system with biometric attendance integration, leave management, and policy-based access control",
+        "Created multi-vendor e-commerce platform (ShopGrid) with payment integration, real-time chat, and i18n support",
+        "Collaborated with cross-functional teams through Agile/Scrum methodology, performed code reviews and mentored junior developers",
+        "Implemented clean architecture patterns, component-based design, and system design patterns for maintainable codebases",
+        "Managed production support, troubleshooting, and incident resolution across multiple applications"
+      ]
+    },
+    {
+      "company": "CodeCraft Labs",
+      "title": "Web Development Intern",
+      "duration": "Jan 2022 – May 2022",
+      "location": "Remote",
+      "isCurrent": false,
+      "bullets": [
+        "Built REST APIs and frontend components using Node.js and React",
+        "Developed automation scripts for data processing and reporting tasks",
+        "Gained hands-on experience in debugging, testing, and API integration",
+        "Worked on internal tools for team productivity and workflow management"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "LangBridge (Freelance, Japan)",
+      "description": "Web application for Japanese language learning with secure authentication and role-based access control supporting Teacher/Student modes. Teachers created lessons and assignments; students submitted audio recordings for review and pronunciation feedback. Built responsive React UI with TypeScript + Express backend on MySQL, comprehensive input validation, and automated tests using Jest with TDD practices. Integrated third-party AI API for pronunciation evaluation.",
+      "coreTech": [
+        "Audio Upload + Processing",
+        "AI Pronunciation API Integration",
+        "Teacher/Student RBAC",
+        "Jest TDD Testing",
+        "TypeScript Backend"
+      ],
+      "stackUsed": {
+        "frontend": "React, TypeScript, HTML5, Tailwind",
+        "backend": "Node.js, Express, MySQL",
+        "testing": "Jest, Unit Testing, Integration Testing",
+        "integration": "AI/ML API"
+      }
+    },
+    {
+      "name": "ResumeForge (ATS Tailoring Tool)",
+      "description": "AI-powered resume tailoring tool with CLI and React web UI. Implements clipboard integration for job description extraction, uses structured JSON resume profile as knowledge base, runs keyword extraction and ATS scoring algorithms, and generates tailored resume outputs with skill-claim validation. Integrated multiple LLM APIs including AWS Bedrock and Google Gemini with prompt engineering, cost tracking via CloudWatch, and comprehensive logging.",
+      "coreTech": [
+        "AWS Bedrock Claude API",
+        "Google Gemini API",
+        "Prompt Engineering",
+        "ATS Scoring Algorithm",
+        "CloudWatch Cost Tracking",
+        "CLI Development"
+      ],
+      "stackUsed": {
+        "frontend": "React, HTML5, Bootstrap",
+        "backend": "Node.js, JavaScript",
+        "integration": "AWS Bedrock, Gemini API, CloudWatch",
+        "algorithms": "Keyword Extraction, ATS Scoring Logic"
+      }
+    },
+    {
+      "name": "Personal Portfolio Website",
+      "description": "Next.js portfolio website with multi-theme support, responsive design, animations using Framer Motion and GSAP, dynamic content rendering, and SSR for SEO. Deployed on AWS EC2 with Nginx reverse proxy, blue-green deployment, CI/CD via GitHub Actions, and Docker containerization.",
+      "coreTech": [
+        "Framer Motion + GSAP Animations",
+        "AWS EC2 + Nginx Deployment",
+        "Blue-Green CI/CD Pipeline",
+        "Docker Containerization",
+        "Google Sheets API Integration"
+      ],
+      "stackUsed": {
+        "frontend": "Next.js, React, TypeScript, Tailwind CSS",
+        "backend": "No backend or database",
+        "devops": "Docker, AWS EC2, Nginx, GitHub Actions",
+        "features": "SSR, SEO, Animations"
+      }
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.Tech in Computer Science",
+      "field": "Computer Science",
+      "institution": "PES University, Bangalore",
+      "duration": "Aug 2018 - July 2022",
+      "score": "8.2 CGPA"
+    }
+  ]
+}

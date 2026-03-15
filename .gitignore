@@ -4,4 +4,5 @@ logs/*
 tmp/
 output/
 *.pdf
+resumeData.json
 !.env.example
