@@ -1,7 +1,7 @@
 {
   "name": "resume-forge",
   "version": "1.0.0",
-  "description": "CLI tool to tailor resumes based on job descriptions using AI",
+  "description": "AI-powered resume tailoring for developers. Bring your own API key, paste a JD, get an ATS-optimized resume PDF with outreach emails — one click.",
   "type": "module",
   "main": "index.js",
   "bin": {
