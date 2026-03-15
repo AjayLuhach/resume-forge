@@ -274,6 +274,10 @@ app.get('/api/history', (req, res) => {
   res.json(readLogFile('resume_history.json') || []);
 });
 
+app.get('/api/keyword-gaps', (_req, res) => {
+  res.json(readLogFile('keyword_gaps.json') || { entries: [], summary: {} });
+});
+
 app.get('/api/resumes', (req, res) => {
   const resumeDir = join(__dirname, 'logs', 'resumes');
   if (!fs.existsSync(resumeDir)) return res.json([]);

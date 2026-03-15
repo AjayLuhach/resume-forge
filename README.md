@@ -102,6 +102,13 @@ Full history of every resume you've generated — job title, company, date, ATS 
 ### Costs (`/costs.html`)
 Tracks API usage and costs across all providers — total calls, input/output tokens, cost per step (analysis vs rewrite), and recent call log with per-model breakdown.
 
+### Skill Gaps (`/gaps.html`)
+Aggregated view of skills that kept appearing in job descriptions but aren't on your resume — built from your application history. Shows:
+- **Learning suggestions** — top missing skills ranked by how often they appear across all JDs you've applied to, with priority levels (high/medium/low)
+- **Missing skills chart** — critical JD requirements you don't have, sorted by frequency
+- **Out-of-scope skills chart** — skills you have alternatives for (e.g., you have MongoDB but JD wants Cassandra), sorted by frequency
+- **Recent timeline** — last 30 applications with their gap breakdown per JD
+
 ## PDF Conversion
 
 The tool generates a `.docx` from your template, then converts it to PDF. Two backends are supported:

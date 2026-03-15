@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skill Gap Insights | Resume Forge</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #12121a;
+    --surface: rgba(255,255,255,0.03);
+    --border: rgba(255,255,255,0.06);
+    --text: #e4e4e7;
+    --text2: #a1a1aa;
+    --text3: #71717a;
+    --accent: #818cf8;
+    --accent2: #6366f1;
+    --green: #34d399;
+    --green2: #10b981;
+    --amber: #fbbf24;
+    --rose: #fb7185;
+    --cyan: #22d3ee;
+    --purple: #a78bfa;
+    --glow: rgba(99,102,241,0.15);
+    --glow2: rgba(99,102,241,0.08);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 80% 10%, rgba(251,113,133,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 50% at 20% 90%, rgba(251,191,36,0.05) 0%, transparent 50%);
+    pointer-events: none; z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none; z-index: 0;
+  }
+
+  .nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 1.5rem;
+  }
+
+  .nav-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    height: 56px;
+  }
+
+  .nav-brand {
+    font-size: 0.95rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #fff, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-decoration: none;
+  }
+
+  .nav-links { display: flex; gap: 0.25rem; }
+
+  .nav-links a {
+    padding: 0.45rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text3);
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--text); background: var(--surface); }
+  .nav-links a.active { color: var(--accent); background: var(--glow2); }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .page-header { margin-bottom: 2rem; }
+
+  .page-header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #fff 0%, var(--rose) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.4rem;
+  }
+
+  .page-header p { color: var(--text3); font-size: 0.9rem; }
+
+  /* Stats */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--rose), transparent);
+    opacity: 0.3;
+  }
+
+  .stat-val {
+    font-size: 1.8rem;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1.1;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    margin-top: 0.3rem;
+  }
+
+  .stat-rose { color: var(--rose); }
+  .stat-amber { color: var(--amber); }
+  .stat-cyan { color: var(--cyan); }
+  .stat-green { color: var(--green); }
+
+  /* Two-column layout */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  @media (max-width: 768px) {
+    .two-col { grid-template-columns: 1fr; }
+  }
+
+  /* Cards */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-rose::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--rose), transparent);
+    opacity: 0.4;
+  }
+
+  .card-amber::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--amber), transparent);
+    opacity: 0.4;
+  }
+
+  .card-cyan::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    opacity: 0.4;
+  }
+
+  .card-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    margin-bottom: 1.2rem;
+  }
+
+  /* Bar chart */
+  .bar-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+  .bar-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .bar-label {
+    font-size: 0.8rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text2);
+    width: 140px;
+    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 6px;
+    background: var(--surface);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .bar-fill-rose { background: linear-gradient(90deg, var(--rose), rgba(251,113,133,0.5)); }
+  .bar-fill-amber { background: linear-gradient(90deg, var(--amber), rgba(251,191,36,0.5)); }
+
+  .bar-count {
+    font-size: 0.72rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text3);
+    width: 28px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* Suggestions */
+  .suggestions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .suggestion-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.2rem;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .suggestion-card:hover {
+    border-color: rgba(255,255,255,0.12);
+    transform: translateY(-2px);
+  }
+
+  .suggestion-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    border-radius: 14px 14px 0 0;
+  }
+
+  .priority-high::before { background: var(--rose); }
+  .priority-mid::before { background: var(--amber); }
+  .priority-low::before { background: var(--cyan); }
+
+  .priority-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    margin-bottom: 0.7rem;
+  }
+
+  .priority-high .priority-badge { background: rgba(251,113,133,0.15); color: var(--rose); }
+  .priority-mid .priority-badge { background: rgba(251,191,36,0.12); color: var(--amber); }
+  .priority-low .priority-badge { background: rgba(34,211,238,0.12); color: var(--cyan); }
+
+  .suggestion-skill {
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+    word-break: break-word;
+  }
+
+  .suggestion-meta {
+    font-size: 0.75rem;
+    color: var(--text3);
+  }
+
+  /* Recent timeline */
+  .timeline { display: flex; flex-direction: column; gap: 0.5rem; }
+
+  .timeline-entry {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 1rem;
+    padding: 0.9rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    align-items: start;
+    transition: border-color 0.15s;
+  }
+
+  .timeline-entry:hover { border-color: rgba(255,255,255,0.1); }
+
+  .timeline-date {
+    font-size: 0.68rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text3);
+    line-height: 1.4;
+  }
+
+  .timeline-job {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text2);
+    margin-bottom: 0.4rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .timeline-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+
+  .tag {
+    font-size: 0.65rem;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .tag-rose { background: rgba(251,113,133,0.12); color: var(--rose); border: 1px solid rgba(251,113,133,0.2); }
+  .tag-amber { background: rgba(251,191,36,0.1); color: var(--amber); border: 1px solid rgba(251,191,36,0.2); }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text3);
+    font-size: 0.9rem;
+  }
+
+  /* Loading */
+  .loading {
+    text-align: center;
+    padding: 4rem;
+    color: var(--text3);
+    font-size: 0.85rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .section-header {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    margin-bottom: 1rem;
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="/">Resume Forge</a>
+    <div class="nav-links">
+      <a href="/">Generate</a>
+      <a href="/emails.html">Emails</a>
+      <a href="/contacts.html">Contacts</a>
+      <a href="/costs.html">Costs</a>
+      <a href="/history.html">History</a>
+      <a href="/gaps.html" class="active">Skill Gaps</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Skill Gap Insights</h1>
+    <p>Skills that keep appearing in job descriptions you don't currently have — based on your application history.</p>
+  </div>
+
+  <div id="content">
+    <div class="loading">Loading gap data...</div>
+  </div>
+</div>
+
+<script>
+async function load() {
+  const res = await fetch('/api/keyword-gaps');
+  const data = await res.json();
+
+  const entries = (data.entries || []).filter(e =>
+    (e.missing && e.missing.length > 0) || (e.cannotClaim && e.cannotClaim.length > 0)
+  );
+
+  // Compute separate frequency maps
+  const missingCounts = {};
+  const cannotClaimCounts = {};
+
+  for (const entry of entries) {
+    for (const skill of (entry.missing || [])) {
+      const k = skill.toLowerCase().trim();
+      missingCounts[k] = (missingCounts[k] || { display: skill, count: 0 });
+      missingCounts[k].count++;
+      // prefer longer/better-cased display name
+      if (skill.length > missingCounts[k].display.length) missingCounts[k].display = skill;
+    }
+    for (const skill of (entry.cannotClaim || [])) {
+      const k = skill.toLowerCase().trim();
+      cannotClaimCounts[k] = (cannotClaimCounts[k] || { display: skill, count: 0 });
+      cannotClaimCounts[k].count++;
+      if (skill.length > cannotClaimCounts[k].display.length) cannotClaimCounts[k].display = skill;
+    }
+  }
+
+  const topMissing = Object.values(missingCounts).sort((a, b) => b.count - a.count);
+  const topCannot = Object.values(cannotClaimCounts).sort((a, b) => b.count - a.count);
+
+  const totalEntries = entries.length;
+  const uniqueMissing = topMissing.length;
+  const uniqueCannot = topCannot.length;
+  const totalOccurrences = topMissing.reduce((s, x) => s + x.count, 0) + topCannot.reduce((s, x) => s + x.count, 0);
+
+  const maxMissingCount = topMissing[0]?.count || 1;
+  const maxCannotCount = topCannot[0]?.count || 1;
+
+  // Suggestions: top missing skills by frequency
+  const suggestions = topMissing.slice(0, 8);
+
+  // Recent entries (last 30, reversed)
+  const recentEntries = [...entries].reverse().slice(0, 30);
+
+  document.getElementById('content').innerHTML = `
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-val stat-rose">${totalEntries}</div>
+        <div class="stat-label">JDs Analyzed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val stat-rose">${uniqueMissing}</div>
+        <div class="stat-label">Unique Missing Skills</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val stat-amber">${uniqueCannot}</div>
+        <div class="stat-label">Out-of-Scope Skills</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val stat-cyan">${totalOccurrences}</div>
+        <div class="stat-label">Total Gap Occurrences</div>
+      </div>
+    </div>
+
+    ${suggestions.length > 0 ? `
+    <div class="section-header" style="margin-bottom:1rem;">Learning Suggestions — skills most in demand that you currently lack</div>
+    <div class="suggestions-grid" style="margin-bottom:2rem;">
+      ${suggestions.map((s, i) => {
+        const pct = Math.round((s.count / totalEntries) * 100);
+        const priority = pct >= 40 ? 'high' : pct >= 20 ? 'mid' : 'low';
+        const label = priority === 'high' ? 'High Priority' : priority === 'mid' ? 'Medium Priority' : 'Low Priority';
+        return `
+        <div class="suggestion-card priority-${priority}">
+          <div class="priority-badge">${label}</div>
+          <div class="suggestion-skill">${escHtml(s.display)}</div>
+          <div class="suggestion-meta">Appeared in ${s.count} of ${totalEntries} JDs (${pct}%)</div>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+
+    <div class="two-col">
+      <div class="card card-rose">
+        <div class="card-title">Missing Skills — critical requirements you don't have</div>
+        ${topMissing.length === 0
+          ? '<div class="empty">No missing skills logged yet</div>'
+          : `<div class="bar-list">
+              ${topMissing.slice(0, 15).map(s => `
+                <div class="bar-item">
+                  <div class="bar-label" title="${escHtml(s.display)}">${escHtml(s.display)}</div>
+                  <div class="bar-track">
+                    <div class="bar-fill bar-fill-rose" style="width:${Math.round((s.count/maxMissingCount)*100)}%"></div>
+                  </div>
+                  <div class="bar-count">${s.count}</div>
+                </div>`).join('')}
+            </div>`
+        }
+      </div>
+
+      <div class="card card-amber">
+        <div class="card-title">Out-of-Scope Skills — different tech in same category</div>
+        ${topCannot.length === 0
+          ? '<div class="empty">No cannot-claim skills logged yet</div>'
+          : `<div class="bar-list">
+              ${topCannot.slice(0, 15).map(s => `
+                <div class="bar-item">
+                  <div class="bar-label" title="${escHtml(s.display)}">${escHtml(s.display)}</div>
+                  <div class="bar-track">
+                    <div class="bar-fill bar-fill-amber" style="width:${Math.round((s.count/maxCannotCount)*100)}%"></div>
+                  </div>
+                  <div class="bar-count">${s.count}</div>
+                </div>`).join('')}
+            </div>`
+        }
+      </div>
+    </div>
+
+    <div class="card card-cyan">
+      <div class="card-title">Recent Job Applications — gap breakdown per JD</div>
+      ${recentEntries.length === 0
+        ? '<div class="empty">No entries yet. Generate your first tailored resume to start tracking gaps.</div>'
+        : `<div class="timeline">
+            ${recentEntries.map(entry => {
+              const d = new Date(entry.date);
+              const dateStr = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' });
+              const missing = (entry.missing || []).slice(0, 5);
+              const cannot = (entry.cannotClaim || []).slice(0, 5);
+              const jobTitle = entry.jobTitle || 'Unknown';
+              return `
+              <div class="timeline-entry">
+                <div class="timeline-date">${escHtml(dateStr)}</div>
+                <div>
+                  <div class="timeline-job" title="${escHtml(jobTitle)}">${escHtml(jobTitle)}</div>
+                  <div class="timeline-tags">
+                    ${missing.map(s => `<span class="tag tag-rose">${escHtml(s)}</span>`).join('')}
+                    ${cannot.map(s => `<span class="tag tag-amber">${escHtml(s)}</span>`).join('')}
+                    ${(entry.missing || []).length + (entry.cannotClaim || []).length > 10
+                      ? `<span class="tag tag-amber">+${(entry.missing || []).length + (entry.cannotClaim || []).length - 10} more</span>` : ''}
+                  </div>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>`
+      }
+    </div>
+  `;
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+load().catch(err => {
+  document.getElementById('content').innerHTML = `<div class="empty">Failed to load data: ${escHtml(err.message)}</div>`;
+});
+</script>
+</body>
+</html>
