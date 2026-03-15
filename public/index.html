@@ -803,6 +803,77 @@
 
   .nav-links a:hover { color: var(--text); background: var(--surface); }
   .nav-links a.active { color: var(--accent); background: var(--glow2); }
+
+  /* Validation banner */
+  .validation-banner {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+  .validation-banner.error { border-color: rgba(251,113,133,0.3); }
+  .validation-banner.warn { border-color: rgba(251,191,36,0.3); }
+  .validation-banner.ok { border-color: rgba(52,211,153,0.2); }
+  .vb-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.2rem;
+  }
+  .vb-status { display: flex; align-items: center; gap: 0.6rem; }
+  .vb-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .vb-title { font-size: 0.82rem; font-weight: 500; color: var(--text2); }
+  .vb-toggle {
+    background: none; border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text3); font-size: 0.72rem; padding: 0.3rem 0.7rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .vb-toggle:hover { color: var(--text); border-color: var(--accent); }
+  .vb-details {
+    max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+    border-top: 1px solid transparent;
+  }
+  .vb-details.open {
+    max-height: 600px;
+    border-top-color: var(--border);
+  }
+  .vb-details > div { padding: 1rem 1.2rem; }
+  .vb-section { margin-bottom: 0.8rem; }
+  .vb-section:last-child { margin-bottom: 0; }
+  .vb-section-title {
+    font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--text3); margin-bottom: 0.4rem;
+  }
+  .vb-list { list-style: none; padding: 0; }
+  .vb-list li {
+    font-size: 0.78rem; color: var(--text2); padding: 0.2rem 0;
+    padding-left: 1rem; position: relative;
+  }
+  .vb-list li::before { content: ''; position: absolute; left: 0; top: 0.55rem; width: 4px; height: 4px; border-radius: 50%; }
+  .vb-list.errors li::before { background: var(--rose); }
+  .vb-list.warnings li::before { background: var(--amber); }
+  .vb-summary {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0.6rem;
+  }
+  .vb-stat {
+    text-align: center; padding: 0.5rem;
+    background: var(--surface); border-radius: 8px;
+  }
+  .vb-stat .val { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+  .vb-stat .lbl { font-size: 0.65rem; color: var(--text3); margin-top: 0.15rem; }
+  .vb-prompt {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.8rem 1rem; font-size: 0.78rem; color: var(--text2);
+    font-family: 'JetBrains Mono', monospace; line-height: 1.6;
+    white-space: pre-wrap; position: relative; cursor: pointer;
+  }
+  .vb-prompt:hover { border-color: var(--accent); }
+  .vb-prompt .copy-hint {
+    position: absolute; top: 0.5rem; right: 0.6rem;
+    font-size: 0.65rem; color: var(--text3); font-family: 'Inter', sans-serif;
+  }
 </style>
 </head>
 <body>
@@ -817,6 +888,7 @@
       <a href="/costs.html">Costs</a>
       <a href="/history.html">History</a>
       <a href="/gaps.html">Skill Gaps</a>
+      <a href="/about.html">About</a>
     </div>
   </div>
 </nav>
@@ -829,6 +901,20 @@
     <div class="status-badge" id="statusBadge">
       <span class="status-dot"></span>
       <span id="statusText">Checking system...</span>
+    </div>
+  </div>
+
+  <!-- Resume validation banner -->
+  <div class="validation-banner" id="validationBanner" style="display:none;">
+    <div class="vb-header" id="vbHeader">
+      <div class="vb-status">
+        <span class="vb-dot" id="vbDot"></span>
+        <span class="vb-title" id="vbTitle"></span>
+      </div>
+      <button class="vb-toggle" id="vbToggle" onclick="document.getElementById('vbDetails').classList.toggle('open')">Details</button>
+    </div>
+    <div class="vb-details" id="vbDetails">
+      <div id="vbContent"></div>
     </div>
   </div>
 
@@ -1079,6 +1165,68 @@ const resultsDiv = document.getElementById('results');
 const modelSelect = document.getElementById('modelSelect');
 const providerSelect = document.getElementById('providerSelect');
 let providersData = {};
+
+// Validate resume data on load
+fetch('/api/validate-resume')
+  .then(r => r.json())
+  .then(v => {
+    const banner = document.getElementById('validationBanner');
+    const dot = document.getElementById('vbDot');
+    const title = document.getElementById('vbTitle');
+    const content = document.getElementById('vbContent');
+    banner.style.display = '';
+
+    if (!v.exists) {
+      banner.className = 'validation-banner error';
+      dot.style.background = 'var(--rose)';
+      title.textContent = 'resumeData.json not found — copy resumeData.example.json and add your details';
+      const prompt = `Use this prompt with any AI to generate your resumeData.json:\n\n"Generate a resumeData.json file for my resume. I am [Your Name], a [Your Role] with [X] years of experience. My tech stack is [e.g., MERN, Python/Django, etc]. I have worked at [Company 1] on [Project 1 description] and [Company 2] on [Project 2]. My personal projects include [list them]. Follow the exact structure from resumeData.example.json."`;
+      content.innerHTML = `
+        <div class="vb-section">
+          <div class="vb-section-title">Quick Start</div>
+          <div class="vb-list errors"><li>Copy <code>resumeData.example.json</code> to <code>resumeData.json</code></li><li>Fill in your real details, or use the AI prompt below</li></div>
+        </div>
+        <div class="vb-section">
+          <div class="vb-section-title">AI Prompt to Generate Your Resume Data</div>
+          <div class="vb-prompt" onclick="navigator.clipboard.writeText(this.innerText.replace('Click to copy','').trim());this.querySelector('.copy-hint').textContent='Copied!';setTimeout(()=>this.querySelector('.copy-hint').textContent='Click to copy',1500)">${escHtml(prompt)}<span class="copy-hint">Click to copy</span></div>
+        </div>`;
+      document.getElementById('vbDetails').classList.add('open');
+    } else if (!v.valid) {
+      banner.className = 'validation-banner error';
+      dot.style.background = 'var(--rose)';
+      title.textContent = `resumeData.json has ${v.errors.length} error${v.errors.length > 1 ? 's' : ''} — fix before generating`;
+      let html = '<div class="vb-section"><div class="vb-section-title">Errors</div><ul class="vb-list errors">';
+      v.errors.forEach(e => html += `<li>${escHtml(e)}</li>`);
+      html += '</ul></div>';
+      if (v.warnings.length) {
+        html += '<div class="vb-section"><div class="vb-section-title">Warnings</div><ul class="vb-list warnings">';
+        v.warnings.forEach(w => html += `<li>${escHtml(w)}</li>`);
+        html += '</ul></div>';
+      }
+      content.innerHTML = html;
+      document.getElementById('vbDetails').classList.add('open');
+    } else {
+      banner.className = 'validation-banner' + (v.warnings.length ? ' warn' : ' ok');
+      dot.style.background = v.warnings.length ? 'var(--amber)' : 'var(--green)';
+      const s = v.summary;
+      title.textContent = v.warnings.length
+        ? `${s.name} | ${s.skillCount} skills | ${v.warnings.length} warning${v.warnings.length > 1 ? 's' : ''}`
+        : `${s.name} | ${s.skillCount} skills | ${s.workProjects} work projects | ${s.personalProjects} personal projects`;
+      let html = '<div class="vb-section"><div class="vb-summary">';
+      html += `<div class="vb-stat"><div class="val">${s.skillCount}</div><div class="lbl">Skills</div></div>`;
+      html += `<div class="vb-stat"><div class="val">${s.workProjects}</div><div class="lbl">Work Projects</div></div>`;
+      html += `<div class="vb-stat"><div class="val">${s.personalProjects}</div><div class="lbl">Personal Projects</div></div>`;
+      html += `<div class="vb-stat"><div class="val">${s.experienceEntries}</div><div class="lbl">Experience</div></div>`;
+      html += '</div></div>';
+      if (v.warnings.length) {
+        html += '<div class="vb-section"><div class="vb-section-title">Warnings</div><ul class="vb-list warnings">';
+        v.warnings.forEach(w => html += `<li>${escHtml(w)}</li>`);
+        html += '</ul></div>';
+      }
+      content.innerHTML = html;
+    }
+  })
+  .catch(() => {});
 
 // Check health on load
 fetch('/api/health')

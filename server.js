@@ -17,6 +17,7 @@ import { generateEmail, generateLinkedInDM } from './services/outreach/email-gen
 import { saveLinkedInDM, saveEmailData, getAllEmailContacts, updateEmailStatus, getUnsentEmails, markEmailAsSent, saveResumeForContact } from './services/outreach/contact-logger.js';
 import { sendEmail, verifyConnection } from './services/outreach/email-sender.js';
 import { getProvider, listProviders } from './services/providers/registry.js';
+import { validateResumeData } from './services/resume-validator.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -182,6 +183,26 @@ app.post('/api/generate', async (req, res) => {
 app.get('/api/health', (req, res) => {
   const { errors, provider } = preflightChecks();
   res.json({ ok: errors.length === 0, provider, errors });
+});
+
+// Resume data validation endpoint
+app.get('/api/validate-resume', (req, res) => {
+  try {
+    if (!fs.existsSync(config.paths.resumeData)) {
+      return res.json({
+        valid: false,
+        exists: false,
+        errors: ['resumeData.json not found — copy resumeData.example.json and fill in your details'],
+        warnings: [],
+        summary: null,
+      });
+    }
+    const data = JSON.parse(fs.readFileSync(config.paths.resumeData, 'utf-8'));
+    const result = validateResumeData(data);
+    res.json({ ...result, exists: true });
+  } catch (err) {
+    res.json({ valid: false, exists: true, errors: [`Failed to parse resumeData.json: ${err.message}`], warnings: [], summary: null });
+  }
 });
 
 // Available AI providers and models
@@ -365,7 +386,28 @@ const PORT = process.env.PORT || 5003;
 app.listen(PORT, () => {
   const activeProvider = config.ai.provider;
 
-  console.log(`\n  🚀 Resume Forge Web UI`);
-  console.log(`  ➜ http://localhost:${PORT}`);
-  console.log(`  ⚙ AI Provider: ${activeProvider}\n`);
+  console.log(`\n  Resume Forge Web UI`);
+  console.log(`  http://localhost:${PORT}`);
+  console.log(`  AI Provider: ${activeProvider}`);
+
+  // Validate resume data on startup
+  if (fs.existsSync(config.paths.resumeData)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(config.paths.resumeData, 'utf-8'));
+      const result = validateResumeData(data);
+      if (result.valid) {
+        console.log(`  Resume: ${result.summary.name} | ${result.summary.skillCount} skills | ${result.summary.workProjects} work projects`);
+      } else {
+        console.log(`  Resume: ${result.errors.length} error(s) found — check /api/validate-resume`);
+      }
+      if (result.warnings.length > 0) {
+        console.log(`  Warnings: ${result.warnings.length}`);
+      }
+    } catch {
+      console.log('  Resume: failed to parse resumeData.json');
+    }
+  } else {
+    console.log('  Resume: resumeData.json not found — copy resumeData.example.json to get started');
+  }
+  console.log('');
 });

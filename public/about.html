@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About | Resume Forge</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #12121a;
+    --bg3: #1a1a2e;
+    --surface: rgba(255,255,255,0.03);
+    --border: rgba(255,255,255,0.06);
+    --text: #e4e4e7;
+    --text2: #a1a1aa;
+    --text3: #71717a;
+    --accent: #818cf8;
+    --accent2: #6366f1;
+    --green: #34d399;
+    --amber: #fbbf24;
+    --rose: #fb7185;
+    --cyan: #22d3ee;
+    --purple: #a78bfa;
+    --glow: rgba(99,102,241,0.15);
+    --glow2: rgba(99,102,241,0.08);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(99,102,241,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 50% at 80% 90%, rgba(168,85,247,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 40% at 50% 50%, rgba(34,211,238,0.04) 0%, transparent 50%);
+    pointer-events: none; z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none; z-index: 0;
+  }
+
+  .nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 1.5rem;
+  }
+
+  .nav-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 2rem; height: 56px;
+  }
+
+  .nav-brand {
+    font-size: 0.95rem; font-weight: 700;
+    background: linear-gradient(135deg, #fff, var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    text-decoration: none; letter-spacing: -0.02em;
+  }
+
+  .nav-links { display: flex; gap: 0.25rem; }
+  .nav-links a {
+    padding: 0.45rem 0.85rem; border-radius: 8px;
+    font-size: 0.8rem; font-weight: 500; color: var(--text3);
+    text-decoration: none; transition: all 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); background: var(--surface); }
+  .nav-links a.active { color: var(--accent); background: var(--glow2); }
+
+  .container {
+    max-width: 900px; margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+    position: relative; z-index: 1;
+  }
+
+  .page-header {
+    text-align: center; margin-bottom: 3rem;
+  }
+
+  .page-header h1 {
+    font-size: 2.2rem; font-weight: 800; letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 50%, var(--cyan) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 0.6rem;
+  }
+
+  .page-header p {
+    color: var(--text3); font-size: 0.95rem; max-width: 600px; margin: 0 auto; line-height: 1.6;
+  }
+
+  /* Accordion sections */
+  .section {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .section:hover { border-color: rgba(255,255,255,0.1); }
+  .section.open { border-color: rgba(99,102,241,0.2); }
+
+  .section-header {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1.2rem 1.5rem; cursor: pointer;
+    transition: background 0.2s; user-select: none;
+  }
+  .section-header:hover { background: var(--surface); }
+
+  .section-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+  }
+
+  .section-meta { flex: 1; }
+  .section-title {
+    font-size: 0.95rem; font-weight: 600; color: var(--text);
+    margin-bottom: 0.15rem;
+  }
+  .section-subtitle {
+    font-size: 0.75rem; color: var(--text3);
+  }
+
+  .section-arrow {
+    width: 20px; height: 20px; color: var(--text3);
+    transition: transform 0.3s; flex-shrink: 0;
+  }
+  .section.open .section-arrow { transform: rotate(180deg); }
+
+  .section-body {
+    max-height: 0; overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  .section.open .section-body {
+    max-height: 2000px;
+  }
+
+  .section-content {
+    padding: 0 1.5rem 1.5rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1.2rem;
+  }
+
+  .section-content p {
+    font-size: 0.85rem; color: var(--text2); line-height: 1.7;
+    margin-bottom: 0.8rem;
+  }
+
+  .section-content h4 {
+    font-size: 0.78rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--text3); margin: 1.2rem 0 0.5rem;
+  }
+  .section-content h4:first-child { margin-top: 0; }
+
+  .section-content ul {
+    list-style: none; padding: 0;
+  }
+  .section-content li {
+    font-size: 0.83rem; color: var(--text2); line-height: 1.6;
+    padding: 0.3rem 0 0.3rem 1.2rem; position: relative;
+  }
+  .section-content li::before {
+    content: ''; position: absolute; left: 0; top: 0.65rem;
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--accent); opacity: 0.6;
+  }
+
+  .section-content code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; background: var(--bg);
+    padding: 0.15rem 0.4rem; border-radius: 4px;
+    color: var(--cyan);
+  }
+
+  .step-flow {
+    display: flex; flex-direction: column; gap: 0;
+  }
+
+  .flow-step {
+    display: flex; gap: 1rem; align-items: flex-start;
+    position: relative; padding-bottom: 1.2rem;
+  }
+  .flow-step:last-child { padding-bottom: 0; }
+  .flow-step:not(:last-child)::after {
+    content: ''; position: absolute; left: 15px; top: 32px;
+    width: 1px; bottom: 0;
+    background: linear-gradient(to bottom, var(--accent), transparent);
+    opacity: 0.3;
+  }
+
+  .flow-num {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--glow2); border: 1px solid rgba(99,102,241,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; font-weight: 700; color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .flow-info { flex: 1; }
+  .flow-title {
+    font-size: 0.85rem; font-weight: 600; color: var(--text);
+    margin-bottom: 0.2rem;
+  }
+  .flow-desc {
+    font-size: 0.8rem; color: var(--text3); line-height: 1.6;
+  }
+
+  .schema-block {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 1rem 1.2rem; overflow-x: auto; position: relative;
+  }
+  .schema-block pre {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; color: var(--text2); line-height: 1.8;
+    margin: 0;
+  }
+  .schema-block .copy-btn {
+    position: absolute; top: 0.6rem; right: 0.6rem;
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text3); font-size: 0.65rem; padding: 0.25rem 0.6rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .schema-block .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+
+  .tag {
+    display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px;
+    font-size: 0.7rem; font-weight: 500;
+  }
+  .tag-required { background: rgba(251,113,133,0.12); color: var(--rose); }
+  .tag-optional { background: rgba(251,191,36,0.12); color: var(--amber); }
+
+  .tab-cards {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.8rem; margin-top: 0.5rem;
+  }
+
+  .tab-card {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1rem; transition: border-color 0.2s;
+  }
+  .tab-card:hover { border-color: rgba(99,102,241,0.2); }
+  .tab-card-title {
+    font-size: 0.82rem; font-weight: 600; color: var(--text);
+    margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.4rem;
+  }
+  .tab-card-desc {
+    font-size: 0.78rem; color: var(--text3); line-height: 1.5;
+  }
+
+  .prompt-box {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 1rem 1.2rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; color: var(--text2); line-height: 1.7;
+    white-space: pre-wrap; cursor: pointer; position: relative;
+    transition: border-color 0.2s;
+  }
+  .prompt-box:hover { border-color: var(--accent); }
+  .prompt-box .copy-hint {
+    position: absolute; top: 0.5rem; right: 0.6rem;
+    font-size: 0.65rem; color: var(--text3); font-family: 'Inter', sans-serif;
+  }
+
+  .footer-note {
+    text-align: center; margin-top: 3rem; padding: 1.5rem;
+    font-size: 0.78rem; color: var(--text3); line-height: 1.6;
+  }
+  .footer-note a { color: var(--accent); text-decoration: none; }
+  .footer-note a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="/">Resume Forge</a>
+    <div class="nav-links">
+      <a href="/">Generate</a>
+      <a href="/emails.html">Emails</a>
+      <a href="/contacts.html">Contacts</a>
+      <a href="/costs.html">Costs</a>
+      <a href="/history.html">History</a>
+      <a href="/gaps.html">Skill Gaps</a>
+      <a href="/about.html" class="active">About</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>How It Works</h1>
+    <p>Resume Forge analyzes job descriptions and rewrites your resume to maximize ATS compatibility, keyword matching, and relevance &mdash; all while keeping your claims truthful.</p>
+  </div>
+
+  <!-- Section: Getting Started -->
+  <div class="section open" id="s-setup">
+    <div class="section-header" onclick="toggleSection('s-setup')">
+      <div class="section-icon" style="background:rgba(52,211,153,0.12);color:var(--green);">1</div>
+      <div class="section-meta">
+        <div class="section-title">Getting Started</div>
+        <div class="section-subtitle">Set up your resume data and configure AI providers</div>
+      </div>
+      <svg class="section-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="section-body">
+      <div class="section-content">
+        <div class="step-flow">
+          <div class="flow-step">
+            <div class="flow-num">1</div>
+            <div class="flow-info">
+              <div class="flow-title">Create Your Resume Data File</div>
+              <div class="flow-desc">Copy <code>resumeData.example.json</code> to <code>resumeData.json</code> and fill in your real details &mdash; name, skills, experience, projects. This is your single source of truth for all resume generations.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">2</div>
+            <div class="flow-info">
+              <div class="flow-title">Configure Environment Variables</div>
+              <div class="flow-desc">Copy <code>.env.example</code> to <code>.env</code> and fill in your AI provider credentials (AWS Bedrock keys or Gemini API key), SMTP settings for email sending, and output directory preferences.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">3</div>
+            <div class="flow-info">
+              <div class="flow-title">Install Dependencies</div>
+              <div class="flow-desc">Run <code>npm install</code> and optionally install LibreOffice for PDF conversion. Without LibreOffice, resumes are generated as DOCX files.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">4</div>
+            <div class="flow-info">
+              <div class="flow-title">Start the Server</div>
+              <div class="flow-desc">Run <code>node server.js</code> to start the web UI. On startup, it validates your <code>resumeData.json</code> and shows any issues on the Generate page.</div>
+            </div>
+          </div>
+        </div>
+
+        <h4>AI Prompt to Generate resumeData.json</h4>
+        <p>If you don't want to write it manually, copy this prompt into any AI chat and it will generate the file for you:</p>
+        <div class="prompt-box" onclick="copyPrompt(this)">Generate a resumeData.json file for my resume with the exact structure shown below. Fill it with my real details:
+
+Name: [Your Name]
+Email: [Your Email]
+Role: [e.g., Full Stack Developer]
+Experience: [X years], started [Month Year]
+Stack: [e.g., MERN, Python/Django, Java/Spring]
+Current company: [Company Name]
+Projects I worked on: [List each project with 2-3 sentences about what you built]
+Personal projects: [List each with a brief description]
+Skills: [List all your technical skills]
+Education: [Your degrees]
+
+Use the structure from resumeData.example.json &mdash; keep all section names, field names, and nesting exactly the same. Write detailed project descriptions (100+ words each) covering what was built, your role, and technologies used.<span class="copy-hint">Click to copy</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section: Generation Pipeline -->
+  <div class="section" id="s-pipeline">
+    <div class="section-header" onclick="toggleSection('s-pipeline')">
+      <div class="section-icon" style="background:rgba(99,102,241,0.12);color:var(--accent);">2</div>
+      <div class="section-meta">
+        <div class="section-title">Generation Pipeline</div>
+        <div class="section-subtitle">What happens when you click Generate</div>
+      </div>
+      <svg class="section-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="section-body">
+      <div class="section-content">
+        <div class="step-flow">
+          <div class="flow-step">
+            <div class="flow-num">1</div>
+            <div class="flow-info">
+              <div class="flow-title">Pre-flight Checks</div>
+              <div class="flow-desc">Verifies AI provider credentials, checks that <code>resumeData.json</code> and <code>template.docx</code> exist, and tests LibreOffice availability for PDF conversion.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">2</div>
+            <div class="flow-info">
+              <div class="flow-title">JD Validation</div>
+              <div class="flow-desc">Validates the pasted job description has enough content to work with (minimum 100 characters).</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">3</div>
+            <div class="flow-info">
+              <div class="flow-title">AI Analysis + Rewriting</div>
+              <div class="flow-desc">Sends your resume data and the JD to the AI provider. The AI extracts keywords, matches them against your skills, identifies gaps, and rewrites your resume title, summary, bullets, skills, and project descriptions to maximize keyword alignment. It also generates application emails and LinkedIn DMs.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">4</div>
+            <div class="flow-info">
+              <div class="flow-title">ATS Scoring</div>
+              <div class="flow-desc">Runs a deterministic scoring algorithm: keyword match percentage, title match, experience gap penalties, and hard-reject gates (e.g., if the JD requires Java but your stack is JavaScript). Scores above 70% are good, 50-69% are mid-range, below 50% need attention.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">5</div>
+            <div class="flow-info">
+              <div class="flow-title">Document Generation</div>
+              <div class="flow-desc">Creates a formatted DOCX resume from your template, then converts it to PDF via LibreOffice. The output is saved to your configured directory and logged in history.</div>
+            </div>
+          </div>
+        </div>
+
+        <h4>Skill Claim Rules</h4>
+        <ul>
+          <li><strong>Exact Match</strong> &mdash; JD keyword exists in your skills or project tech. These are directly used.</li>
+          <li><strong>Can Claim</strong> &mdash; JD says a generic term (e.g., "JavaScript frameworks") and you have a specific one (e.g., React). Only for generic-to-specific matches.</li>
+          <li><strong>Cannot Claim</strong> &mdash; Skills listed in <code>meta.cannotClaim</code> plus any tech that's a different tool in the same category (has MongoDB, can't claim PostgreSQL from JD).</li>
+          <li><strong>Missing</strong> &mdash; Critical JD requirements you don't have. Shown in the skill gaps report.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section: Dashboard Tabs -->
+  <div class="section" id="s-tabs">
+    <div class="section-header" onclick="toggleSection('s-tabs')">
+      <div class="section-icon" style="background:rgba(34,211,238,0.12);color:var(--cyan);">3</div>
+      <div class="section-meta">
+        <div class="section-title">Dashboard Tabs</div>
+        <div class="section-subtitle">What each page in the navigation does</div>
+      </div>
+      <svg class="section-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="section-body">
+      <div class="section-content">
+        <div class="tab-cards">
+          <div class="tab-card">
+            <div class="tab-card-title"><span style="color:var(--accent)">&#9889;</span> Generate</div>
+            <div class="tab-card-desc">The main page. Paste a job description, select your AI provider and model, and generate a tailored resume. Shows real-time pipeline progress, ATS score, rewritten content, email draft, LinkedIn DM, and contact info.</div>
+          </div>
+          <div class="tab-card">
+            <div class="tab-card-title"><span style="color:var(--green)">&#9993;</span> Emails</div>
+            <div class="tab-card-desc">Review, approve, or reject auto-generated application emails. Approved emails can be bulk-sent via your configured SMTP server with the tailored resume PDF attached.</div>
+          </div>
+          <div class="tab-card">
+            <div class="tab-card-title"><span style="color:var(--purple)">&#128101;</span> Contacts</div>
+            <div class="tab-card-desc">Browse all extracted recruiter contacts, LinkedIn profiles, and application URLs from processed job descriptions. Tracks which companies you've applied to.</div>
+          </div>
+          <div class="tab-card">
+            <div class="tab-card-title"><span style="color:var(--amber)">&#36;</span> Costs</div>
+            <div class="tab-card-desc">Monitor API usage across providers &mdash; total calls, tokens consumed, and costs in USD/INR. Tracks per-model breakdowns to help optimize spending.</div>
+          </div>
+          <div class="tab-card">
+            <div class="tab-card-title"><span style="color:var(--cyan)">&#128203;</span> History</div>
+            <div class="tab-card-desc">View all previously generated resumes with ATS scores, job details, and download links. Each entry stores the full rewritten content so you can regenerate PDFs anytime.</div>
+          </div>
+          <div class="tab-card">
+            <div class="tab-card-title"><span style="color:var(--rose)">&#128200;</span> Skill Gaps</div>
+            <div class="tab-card-desc">Aggregated view of skills that JDs frequently require but you're missing. Helps you prioritize which skills to learn based on actual market demand from your applications.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section: Resume Data Structure -->
+  <div class="section" id="s-schema">
+    <div class="section-header" onclick="toggleSection('s-schema')">
+      <div class="section-icon" style="background:rgba(167,139,250,0.12);color:var(--purple);">4</div>
+      <div class="section-meta">
+        <div class="section-title">Resume Data Structure</div>
+        <div class="section-subtitle">How to structure your resumeData.json file</div>
+      </div>
+      <svg class="section-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="section-body">
+      <div class="section-content">
+        <p>Your <code>resumeData.json</code> is the single source of truth. The AI never invents skills or experience &mdash; it only rewrites what's already in this file. The more detailed your project descriptions are, the better the AI can match JD keywords.</p>
+
+        <h4>Top-Level Sections</h4>
+        <ul>
+          <li><code>personalInfo</code> <span class="tag tag-required">required</span> &mdash; Name, email, phone, links. Name and email are required, rest optional.</li>
+          <li><code>meta</code> <span class="tag tag-required">required</span> &mdash; Experience start date (e.g., "Jun 2022"), stack, cloud provider, project lists, and <code>cannotClaim</code> array for skills you don't have.</li>
+          <li><code>professionalSummary</code> <span class="tag tag-required">required</span> &mdash; A <code>default</code> summary string (200+ chars) that gets rewritten per JD. Optional <code>keywords</code> array.</li>
+          <li><code>skills</code> <span class="tag tag-required">required</span> &mdash; Split into <code>frontend</code>, <code>backend</code> (required), and <code>toolsDevOps</code>, <code>other</code> (optional). Each is an array of strings.</li>
+          <li><code>experience</code> <span class="tag tag-required">required</span> &mdash; Array of jobs. Each needs <code>company</code>, <code>title</code>, <code>duration</code>. Can have nested <code>projects</code> array and <code>bullets</code> array.</li>
+          <li><code>projects</code> <span class="tag tag-required">required</span> &mdash; Personal/freelance projects. Each needs <code>name</code> and <code>description</code>. Optional <code>coreTech</code> and <code>stackUsed</code>.</li>
+          <li><code>education</code> <span class="tag tag-optional">optional</span> &mdash; Array with <code>degree</code> and <code>institution</code> required.</li>
+        </ul>
+
+        <h4>Key Fields Explained</h4>
+        <ul>
+          <li><code>meta.experienceStart</code> &mdash; Used to calculate total years of experience. Format: "Mon YYYY" (e.g., "Aug 2023").</li>
+          <li><code>meta.coreProjects</code> &mdash; Work project names that always get highlighted in bullets. Must match names in <code>experience[].projects[].name</code>.</li>
+          <li><code>meta.cannotClaim</code> &mdash; Skills the AI must never claim you have, even if a JD asks for them. Prevents false claims.</li>
+          <li><code>experience[].projects[].coreTech</code> &mdash; Key technical achievements per project. Used for keyword matching against JDs.</li>
+          <li><code>experience[].projects[].description</code> &mdash; Detailed description (100+ words recommended). The AI rewrites from this, so more detail = better output.</li>
+        </ul>
+
+        <h4>Minimal Schema</h4>
+        <div class="schema-block">
+          <button class="copy-btn" onclick="copySchema(this)">Copy</button>
+<pre>{
+  "personalInfo": {
+    "name": "Your Name",          // required
+    "email": "you@email.com"      // required
+  },
+  "meta": {
+    "experienceStart": "Jun 2022", // required, "Mon YYYY"
+    "stack": "MERN",               // required
+    "cannotClaim": ["Java", "Go"]  // skills you don't have
+  },
+  "professionalSummary": {
+    "default": "Your professional summary (200+ chars)..."
+  },
+  "skills": {
+    "frontend": ["React", "TypeScript"],
+    "backend": ["Node.js", "MongoDB"]
+  },
+  "experience": [{
+    "company": "Company Name",
+    "title": "Your Title",
+    "duration": "Jun 2022 - Present",
+    "projects": [{
+      "name": "Project Name",
+      "description": "Detailed description of what you built...",
+      "coreTech": ["Key Tech 1", "Key Tech 2"]
+    }]
+  }],
+  "projects": [{
+    "name": "Side Project",
+    "description": "What it does and how you built it..."
+  }]
+}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section: AI Providers -->
+  <div class="section" id="s-providers">
+    <div class="section-header" onclick="toggleSection('s-providers')">
+      <div class="section-icon" style="background:rgba(251,191,36,0.12);color:var(--amber);">5</div>
+      <div class="section-meta">
+        <div class="section-title">AI Providers</div>
+        <div class="section-subtitle">Supported AI backends and how to configure them</div>
+      </div>
+      <svg class="section-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="section-body">
+      <div class="section-content">
+        <h4>AWS Bedrock (Default)</h4>
+        <ul>
+          <li>Set <code>AI_PROVIDER=bedrock</code> in <code>.env</code></li>
+          <li>Requires <code>AWS_ACCESS_KEY_ID</code> and <code>AWS_SECRET_ACCESS_KEY</code></li>
+          <li>Models: Claude Haiku (default), DeepSeek, Qwen, GLM &mdash; selectable from the dropdown</li>
+          <li>Costs are tracked per-call and logged to <code>logs/bedrock_costs.json</code></li>
+        </ul>
+
+        <h4>Google Gemini</h4>
+        <ul>
+          <li>Set <code>AI_PROVIDER=gemini</code> in <code>.env</code></li>
+          <li>Requires <code>GEMINI_API_KEY</code></li>
+          <li>Auto-rotates through model pool on rate limits (Gemini Pro, Flash, etc.)</li>
+          <li>Free tier available with rate limits</li>
+        </ul>
+
+        <h4>Adding a Custom Provider</h4>
+        <ul>
+          <li>Create a new file in <code>services/providers/</code> extending <code>BaseProvider</code></li>
+          <li>Implement <code>tailorResume(jd, resumeData)</code> method</li>
+          <li>Register it in <code>services/providers/registry.js</code></li>
+          <li>See <code>services/providers/README.md</code> for the full guide</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section: CLI Usage -->
+  <div class="section" id="s-cli">
+    <div class="section-header" onclick="toggleSection('s-cli')">
+      <div class="section-icon" style="background:rgba(251,113,133,0.12);color:var(--rose);">6</div>
+      <div class="section-meta">
+        <div class="section-title">CLI & Claude Code Usage</div>
+        <div class="section-subtitle">Using the tool from terminal or with Claude Code</div>
+      </div>
+      <svg class="section-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="section-body">
+      <div class="section-content">
+        <h4>Web UI</h4>
+        <p>Run <code>node server.js</code> and open <code>http://localhost:5003</code>. Paste a JD, pick your model, and click Generate.</p>
+
+        <h4>CLI via index.js</h4>
+        <p>Run <code>node index.js</code> to use the command-line interface. It reads the JD from your system clipboard (<code>xclip</code> on Linux), runs the same pipeline, and outputs the resume to your configured directory.</p>
+
+        <h4>Claude Code Integration</h4>
+        <p>If you use Claude Code (Anthropic's CLI), say "tailor resume" and it will follow the workflow defined in <code>CLAUDE.md</code>: read clipboard for JD, analyze keywords, rewrite your resume, run the generation script, and display results &mdash; all in one go.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section: Validation -->
+  <div class="section" id="s-validation">
+    <div class="section-header" onclick="toggleSection('s-validation')">
+      <div class="section-icon" style="background:rgba(52,211,153,0.12);color:var(--green);">7</div>
+      <div class="section-meta">
+        <div class="section-title">Resume Validation</div>
+        <div class="section-subtitle">Automatic structure checking on startup</div>
+      </div>
+      <svg class="section-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="section-body">
+      <div class="section-content">
+        <p>When the server starts and when you open the Generate page, your <code>resumeData.json</code> is automatically validated against the expected schema. You'll see a banner at the top of the Generate page showing:</p>
+        <ul>
+          <li><strong style="color:var(--green)">Green</strong> &mdash; All good. Shows your name, skill count, and project counts.</li>
+          <li><strong style="color:var(--amber)">Amber</strong> &mdash; Valid but has warnings (e.g., short descriptions, missing optional fields).</li>
+          <li><strong style="color:var(--rose)">Red</strong> &mdash; Has errors that need fixing before you can generate (e.g., missing required sections or fields).</li>
+        </ul>
+        <p>If <code>resumeData.json</code> doesn't exist at all, the banner expands automatically with setup instructions and an AI prompt to help you create the file.</p>
+        <p>You can also check validation programmatically at <code>GET /api/validate-resume</code>.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    Built with Node.js, Express, and multiple AI providers.<br>
+    <a href="https://github.com/ajayluhach/resume-forge">View on GitHub</a>
+  </div>
+</div>
+
+<script>
+function toggleSection(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+
+function copyPrompt(el) {
+  const text = el.innerText.replace('Click to copy', '').trim();
+  navigator.clipboard.writeText(text);
+  const hint = el.querySelector('.copy-hint');
+  hint.textContent = 'Copied!';
+  setTimeout(() => hint.textContent = 'Click to copy', 1500);
+}
+
+function copySchema(btn) {
+  const pre = btn.parentElement.querySelector('pre');
+  navigator.clipboard.writeText(pre.textContent);
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy', 1500);
+}
+</script>
+</body>
+</html>
