@@ -15,8 +15,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import config from "../config.js";
-import { generateDocx } from "../services/document.js";
-import { convertToPdf, cleanupDocx, checkLibreOffice } from "../services/converter.js";
+import { generateDocx } from "../services/pipeline/document.js";
+import { convertToPdf, cleanupDocx, checkLibreOffice } from "../services/pipeline/converter.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

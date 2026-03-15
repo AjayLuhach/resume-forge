@@ -15,8 +15,8 @@ import {
   sendEmail,
   sendEmailsFromFile,
   verifyConnection,
-} from "../services/email-sender.js";
-import { getUnsentEmails, checkPreviouslySent, markEmailAsSent } from "../services/contact-logger.js";
+} from "../services/outreach/email-sender.js";
+import { getUnsentEmails, checkPreviouslySent, markEmailAsSent } from "../services/outreach/contact-logger.js";
 
 // ============================================================
 // CONFIRMATION PROMPT

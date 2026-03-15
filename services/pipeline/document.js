@@ -5,7 +5,7 @@
 import fs from 'fs';
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
-import config from '../config.js';
+import config from '../../config.js';
 
 /**
  * Load and parse DOCX template

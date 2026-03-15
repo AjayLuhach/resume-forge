@@ -45,16 +45,18 @@ export const config = {
   },
 
   // AI Configuration
+  // Set AI_PROVIDER env var to switch: 'bedrock' | 'gemini'
+  // To add a new provider: see services/providers/README or extend BaseProvider
   ai: {
-    // Provider: 'gemini' (free tier) or 'bedrock' (AWS, paid)
     provider: process.env.AI_PROVIDER || 'bedrock',
 
     // ─────────────────────────────────────────────────────────
     // GEMINI CONFIG (Google AI - Free tier with rate limits)
+    // Required: GEMINI_API_KEY
     // ─────────────────────────────────────────────────────────
     gemini: {
       apiKey: process.env.GEMINI_API_KEY || '',
-      // Model pool for rotation (ordered by preference)
+      // Model pool for rotation (ordered by preference, auto-rotates on rate limit)
       models: {
         analysis: [
           'gemini-2.5-pro',
@@ -72,27 +74,18 @@ export const config = {
           'gemini-2.0-flash',
           'gemini-2.0-flash-lite',
         ],
-        scoring: [
-          'gemini-2.0-flash-lite',
-          'gemini-2.5-flash-lite',
-          'gemini-2.0-flash',
-          'gemini-3-flash-preview',
-          'gemini-2.5-flash',
-          'gemini-2.5-pro',
-        ],
       },
       rateLimitCooldown: 60000,
     },
 
     // ─────────────────────────────────────────────────────────
-    // BEDROCK CONFIG (AWS - Paid, with prompt caching support)
+    // BEDROCK CONFIG (AWS - Paid, multi-model via Converse API)
+    // Required: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
     // ─────────────────────────────────────────────────────────
     bedrock: {
       region: process.env.AWS_REGION || 'us-east-1',
 
-      // Set any Bedrock model ID directly, or use a shorthand alias
-      // Aliases: 'haiku', 'deepseek', 'qwen', 'glm'
-      // Or full model ID: 'us.anthropic.claude-haiku-4-5-20251001-v1:0'
+      // Use alias ('haiku', 'deepseek', 'qwen', 'glm') or full model ID
       modelId: process.env.BEDROCK_MODEL || 'haiku',
 
       // Shorthand aliases → full Bedrock model IDs
@@ -103,21 +96,11 @@ export const config = {
         glm: 'zai.glm-4.7',
       },
 
-      // Max tokens per step (applies to all models)
       maxTokens: {
         analysis: 3072,
         rewrite: 2048,
       },
     },
-
-    // Legacy: keep for backward compatibility with ai.js
-    geminiApiKey: process.env.GEMINI_API_KEY || '',
-    models: {
-      analysis: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'],
-      rewrite: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'],
-      scoring: ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-2.5-flash'],
-    },
-    rateLimitCooldown: 60000,
   },
 
   // Output options

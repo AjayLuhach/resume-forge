@@ -22,135 +22,19 @@
  */
 
 import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-import { dirname } from "path";
 import config from "../config.js";
-import { scoreResume } from "../services/ats-scorer.js";
-import { generateDocx } from "../services/document.js";
-import { convertToPdf, cleanupDocx, checkLibreOffice } from "../services/converter.js";
-import { generateEmail, generateLinkedInDM } from "../services/email-generator.js";
+import { scoreResume } from "../services/pipeline/ats-scorer.js";
+import { generateDocx } from "../services/pipeline/document.js";
+import { convertToPdf, cleanupDocx, checkLibreOffice } from "../services/pipeline/converter.js";
+import { generateEmail, generateLinkedInDM } from "../services/outreach/email-generator.js";
 import {
   logContactDetails,
   saveLinkedInDM,
   saveEmailData,
   saveResumeForContact,
-} from "../services/contact-logger.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const LOG_DIR = path.join(__dirname, "..", "logs");
-const KEYWORD_LOG = path.join(LOG_DIR, "keyword_gaps.json");
-const RESUME_LOG = path.join(LOG_DIR, "resume_history.json");
-
-// ── Logging helpers (same as ai-bedrock.js) ──
-
-function logKeywordGaps(jobTitle, analysis) {
-  const cannotClaim = analysis.cannotClaim || [];
-  const missing = analysis.missing || [];
-  if (cannotClaim.length === 0 && missing.length === 0) return;
-
-  if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR, { recursive: true });
-
-  let log = { entries: [], summary: {} };
-  if (fs.existsSync(KEYWORD_LOG)) {
-    try { log = JSON.parse(fs.readFileSync(KEYWORD_LOG, "utf-8")); } catch { log = { entries: [], summary: {} }; }
-  }
-
-  log.entries.push({
-    date: new Date().toISOString(),
-    jobTitle: (jobTitle || "").substring(0, 100),
-    cannotClaim,
-    missing,
-  });
-
-  [...cannotClaim, ...missing].forEach((kw) => {
-    const key = kw.toLowerCase().trim();
-    log.summary[key] = (log.summary[key] || 0) + 1;
-  });
-
-  fs.writeFileSync(KEYWORD_LOG, JSON.stringify(log, null, 2));
-}
-
-function logResumeHistory(analysis, rewritten, score) {
-  if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR, { recursive: true });
-
-  let history = [];
-  if (fs.existsSync(RESUME_LOG)) {
-    try { history = JSON.parse(fs.readFileSync(RESUME_LOG, "utf-8")); } catch { history = []; }
-  }
-
-  history.push({
-    date: new Date().toISOString(),
-    job: {
-      title: analysis.jdTitle || null,
-      company: analysis.jdCompany || null,
-      language: analysis.jdLang || null,
-      yearsRequired: analysis.jdYears || null,
-      contact: analysis.contact || null,
-    },
-    score: {
-      final: score.overallScore,
-      keywordExact: score.keywordExact,
-      hardReject: score.hardReject,
-      penalties: score.penalties,
-    },
-    resume: {
-      summary: rewritten.summary,
-      skills: rewritten.skills,
-      bullets: rewritten.bullets,
-      projects: rewritten.projects || {},
-      projectsUsed: rewritten.projectsUsed || [],
-    },
-    keywords: {
-      matched: score.found,
-      missing: score.missing,
-    },
-  });
-
-  fs.writeFileSync(RESUME_LOG, JSON.stringify(history, null, 2));
-}
-
-// ── Display helpers ──
-
-function displayScore(score) {
-  console.log("\n" + "─".repeat(60));
-  console.log("STEP 3: ATS SCORE (Deterministic)");
-  console.log("─".repeat(60));
-
-  const emoji = score.overallScore >= 70 ? "🟢" : score.overallScore >= 50 ? "🟡" : "🔴";
-  console.log(`\n${emoji} FINAL SCORE: ${score.overallScore}%`);
-  console.log(`   Keyword Exact Match: ${score.keywordExact}%`);
-
-  console.log("\n📊 HARD GATES:");
-  console.log(`   Title Match:      ${score.titleMatch === true ? "✅ Yes" : score.titleMatch === false ? "❌ No" : "⚠️  Unknown"}`);
-  console.log(`   Experience Match: ${score.expMatch === true ? "✅ Yes" : score.expMatch === false ? "❌ No" : "⚠️  Unknown"}`);
-  console.log(`   Hard Reject:      ${score.hardReject === true ? "🚫 YES" : "✅ No"}`);
-
-  if (score.hardReject && score.rejectReason) {
-    console.log(`\n🚫 REJECT REASON: ${score.rejectReason}`);
-  }
-
-  if (score.penalties && score.penalties.length > 0) {
-    console.log("\n⚠️  PENALTIES APPLIED:");
-    score.penalties.forEach((p) => console.log(`   - ${p}`));
-  }
-
-  console.log("\n✅ JD KEYWORDS MATCHED:");
-  console.log("   " + (score.found || []).join(", ") || "none");
-
-  if ((score.canClaimMatched || []).length > 0) {
-    console.log("\n🎁 BONUS KEYWORDS (related skills used):");
-    console.log("   " + score.canClaimMatched.join(", "));
-  }
-
-  if ((score.missing || []).length > 0) {
-    console.log("\n❌ JD KEYWORDS MISSING:");
-    console.log("   " + score.missing.join(", "));
-  }
-
-  console.log("\n" + "─".repeat(60));
-}
+} from "../services/outreach/contact-logger.js";
+import { logKeywordGaps, logResumeHistory } from "../services/logging.js";
+import { displayScore } from "../services/display.js";
 
 // ── Main ──
 
@@ -200,7 +84,7 @@ async function main() {
 
   // ── Logging ──
   logKeywordGaps(analysis.jdTitle || "", analysis);
-  logResumeHistory(analysis, rewritten, score);
+  logResumeHistory(analysis, rewritten, score, "claude-code");
 
   logContactDetails(analysis.contact, {
     title: analysis.jdTitle,

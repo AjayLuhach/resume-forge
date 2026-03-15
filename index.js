@@ -14,22 +14,11 @@
 import fs from 'fs';
 import config from './config.js';
 import { readClipboard, validateJobDescription } from './services/clipboard.js';
-import { generateDocx } from './services/document.js';
-import { convertToPdf, cleanupDocx, checkLibreOffice } from './services/converter.js';
-import { generateEmail, generateLinkedInDM } from './services/email-generator.js';
-import { saveLinkedInDM, saveEmailData } from './services/contact-logger.js';
-
-// Dynamic import based on provider
-async function getAIService() {
-  const provider = config.ai.provider;
-  if (provider === 'bedrock') {
-    const module = await import('./services/ai-bedrock.js');
-    return module.tailorResume;
-  }
-  // Default to Gemini
-  const module = await import('./services/ai.js');
-  return module.tailorResume;
-}
+import { generateDocx } from './services/pipeline/document.js';
+import { convertToPdf, cleanupDocx, checkLibreOffice } from './services/pipeline/converter.js';
+import { generateEmail, generateLinkedInDM } from './services/outreach/email-generator.js';
+import { saveLinkedInDM, saveEmailData } from './services/outreach/contact-logger.js';
+import { getProvider } from './services/providers/registry.js';
 
 /**
  * Load master resume data from JSON file
@@ -59,13 +48,13 @@ function preflightChecks() {
   // Provider-specific checks
   const aiCheck = provider === 'bedrock'
     ? {
-        name: `AWS Bedrock (${config.ai.bedrock.modelId.split('.')[1]?.split('-').slice(0,3).join('-') || 'claude'})`,
+        name: `AWS Bedrock (${config.ai.bedrock.modelId || 'haiku'})`,
         pass: !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY),
         required: true,
       }
     : {
-        name: 'Gemini API Key',
-        pass: !!config.ai.geminiApiKey,
+        name: `Gemini API Key`,
+        pass: !!(config.ai.gemini.apiKey || process.env.GEMINI_API_KEY),
         required: true,
       };
 
@@ -206,10 +195,10 @@ async function main() {
     // Load resume data
     const resumeData = loadResumeData();
 
-    // AI tailoring (dynamic provider)
-    const tailorResume = await getAIService();
+    // AI tailoring (pluggable provider)
+    const provider = await getProvider();
     console.log(`\n🤖 Using AI provider: ${config.ai.provider.toUpperCase()}`);
-    const aiResponse = await tailorResume(jobDescription, resumeData);
+    const aiResponse = await provider.tailorResume(jobDescription, resumeData);
 
     // Preview
     displaySummary(aiResponse, resumeData);

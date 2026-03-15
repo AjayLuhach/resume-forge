@@ -11,11 +11,12 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import config from './config.js';
 import { validateJobDescription } from './services/clipboard.js';
-import { generateDocx } from './services/document.js';
-import { convertToPdf, cleanupDocx, checkLibreOffice } from './services/converter.js';
-import { generateEmail, generateLinkedInDM } from './services/email-generator.js';
-import { saveLinkedInDM, saveEmailData, getAllEmailContacts, updateEmailStatus, getUnsentEmails, markEmailAsSent, saveResumeForContact } from './services/contact-logger.js';
-import { sendEmail, verifyConnection } from './services/email-sender.js';
+import { generateDocx } from './services/pipeline/document.js';
+import { convertToPdf, cleanupDocx, checkLibreOffice } from './services/pipeline/converter.js';
+import { generateEmail, generateLinkedInDM } from './services/outreach/email-generator.js';
+import { saveLinkedInDM, saveEmailData, getAllEmailContacts, updateEmailStatus, getUnsentEmails, markEmailAsSent, saveResumeForContact } from './services/outreach/contact-logger.js';
+import { sendEmail, verifyConnection } from './services/outreach/email-sender.js';
+import { getProvider, listProviders } from './services/providers/registry.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -29,16 +30,7 @@ app.get('/', (req, res) => {
   res.sendFile(join(__dirname, 'public', 'index.html'));
 });
 
-// Dynamic AI service loader
-async function getAIService() {
-  const provider = config.ai.provider;
-  if (provider === 'bedrock') {
-    const module = await import('./services/ai-bedrock.js');
-    return module.tailorResume;
-  }
-  const module = await import('./services/ai.js');
-  return module.tailorResume;
-}
+// AI service loader via provider registry
 
 // Load resume data
 function loadResumeData() {
@@ -58,8 +50,8 @@ function preflightChecks() {
     if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
       errors.push('AWS credentials not configured');
     }
-  } else {
-    if (!config.ai.geminiApiKey) errors.push('Gemini API key not configured');
+  } else if (provider === 'gemini') {
+    if (!(config.ai.gemini.apiKey || process.env.GEMINI_API_KEY)) errors.push('Gemini API key not configured');
   }
   if (!fs.existsSync(config.paths.resumeData)) errors.push('resumeData.json not found');
   if (!fs.existsSync(config.paths.template)) errors.push('template.docx not found');
@@ -86,7 +78,7 @@ app.post('/api/generate', async (req, res) => {
   try {
     // Step 0: Preflight
     sendEvent(res, 'step', { step: 0, label: 'Running pre-flight checks...' });
-    const { hasLibreOffice, errors, provider } = preflightChecks();
+    const { hasLibreOffice, errors } = preflightChecks();
     if (errors.length > 0) {
       sendEvent(res, 'error', { message: `Pre-flight failed: ${errors.join(', ')}` });
       return res.end();
@@ -109,10 +101,11 @@ app.post('/api/generate', async (req, res) => {
     sendEvent(res, 'step', { step: 2, label: `Loaded: ${resumeData.personalInfo?.name}`, done: true });
 
     // Step 3: AI Tailoring
+    const providerName = req.body.provider || config.ai.provider;
     const modelLabel = model || config.ai.bedrock.modelId || 'haiku';
-    sendEvent(res, 'step', { step: 3, label: `AI tailoring via ${provider.toUpperCase()} [${modelLabel}]...` });
-    const tailorResume = await getAIService();
-    const aiResponse = await tailorResume(jobDescription, resumeData, model);
+    sendEvent(res, 'step', { step: 3, label: `AI tailoring via ${providerName.toUpperCase()} [${modelLabel}]...` });
+    const aiProvider = await getProvider(providerName, model);
+    const aiResponse = await aiProvider.tailorResume(jobDescription, resumeData);
     sendEvent(res, 'step', { step: 3, label: 'AI tailoring complete', done: true });
 
     // Step 4: Generate outputs (email, LinkedIn)
@@ -191,17 +184,13 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: errors.length === 0, provider, errors });
 });
 
-// Available AI models
-app.get('/api/models', (req, res) => {
-  const aliases = config.ai.bedrock.modelAliases || {};
-  const raw = config.ai.bedrock.modelId || 'haiku';
-  // Resolve: if raw is a full model ID, find its alias name
-  const defaultModel = aliases[raw]
-    ? raw
-    : Object.entries(aliases).find(([, id]) => id === raw)?.[0] || raw;
+// Available AI providers and models
+app.get('/api/models', async (req, res) => {
+  const providers = await listProviders();
+  const activeProvider = config.ai.provider;
   res.json({
-    models: Object.keys(aliases),
-    default: defaultModel,
+    activeProvider,
+    providers,
   });
 });
 
@@ -370,14 +359,9 @@ app.get('/api/resumes/:filename', async (req, res) => {
 
 const PORT = process.env.PORT || 5003;
 app.listen(PORT, () => {
-  const provider = config.ai.provider;
-  const bedrockModelId = config.ai.bedrock.modelId || 'haiku';
-  const resolved = config.ai.bedrock.modelAliases?.[bedrockModelId] || bedrockModelId;
-  const modelLabel = provider === 'bedrock'
-    ? `Bedrock → ${resolved}`
-    : 'Gemini';
+  const activeProvider = config.ai.provider;
 
   console.log(`\n  🚀 Resume Forge Web UI`);
   console.log(`  ➜ http://localhost:${PORT}`);
-  console.log(`  ⚙ AI Model: ${modelLabel}\n`);
+  console.log(`  ⚙ AI Provider: ${activeProvider}\n`);
 });

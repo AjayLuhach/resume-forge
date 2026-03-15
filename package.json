@@ -36,6 +36,7 @@
     "mammoth": "^1.11.0",
     "nodemailer": "^8.0.1",
     "pdf-lib": "^1.17.1",
-    "pizzip": "^3.1.7"
+    "pizzip": "^3.1.7",
+    "puppeteer-core": "^24.39.1"
   }
 }
